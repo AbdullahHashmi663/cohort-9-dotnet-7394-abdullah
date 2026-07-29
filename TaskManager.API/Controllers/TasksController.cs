@@ -40,6 +40,25 @@ namespace TaskManager.API.Controllers
             return Ok(dashboard);
         }
 
+        // GET: api/Tasks/export
+        [HttpGet("export")]
+        public async Task<IActionResult> ExportTasks()
+        {
+            var userId = GetCurrentUserId();
+            var userRole = GetCurrentUserRole();
+            var bytes = await _taskService.ExportTasksAsync(userId, userRole);
+            return File(bytes, "application/json", "tasks.json");
+        }
+
+        // POST: api/Tasks/import
+        [HttpPost("import")]
+        public async Task<IActionResult> ImportTasks([FromBody] List<TaskCreateDto> taskInputs)
+        {
+            var userId = GetCurrentUserId();
+            var count = await _taskService.ImportTasksAsync(taskInputs, userId);
+            return Ok(new { message = $"{count} tasks imported successfully.", importedCount = count });
+        }
+
         // GET: api/Tasks
         [HttpGet]
         public async Task<IActionResult> GetTasks()

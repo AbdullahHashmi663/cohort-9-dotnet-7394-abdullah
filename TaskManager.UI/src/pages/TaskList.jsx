@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import API from '../api/axiosInstance';
 
@@ -7,9 +7,11 @@ export default function TaskList() {
   const [filteredTasks, setFilteredTasks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [successMsg, setSuccessMsg] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
   const [priorityFilter, setPriorityFilter] = useState('All');
+  const fileInputRef = useRef(null);
 
   useEffect(() => {
     fetchTasks();
@@ -58,8 +60,49 @@ export default function TaskList() {
     try {
       await API.delete(`/tasks/${id}`);
       setTasks(tasks.filter(t => t.id !== id));
+      setSuccessMsg('Task deleted successfully.');
+      setTimeout(() => setSuccessMsg(''), 3000);
     } catch (err) {
       setError('Failed to delete task.');
+    }
+  };
+
+  const handleExport = async () => {
+    try {
+      const response = await API.get('/tasks/export', { responseType: 'blob' });
+      const blob = new Blob([response.data], { type: 'application/json' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'tasks.json';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+      setSuccessMsg('Tasks exported successfully!');
+      setTimeout(() => setSuccessMsg(''), 3000);
+    } catch (err) {
+      setError('Failed to export tasks.');
+    }
+  };
+
+  const handleImportFileChange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    try {
+      const text = await file.text();
+      const jsonData = JSON.parse(text);
+      const itemsToImport = Array.isArray(jsonData) ? jsonData : [jsonData];
+
+      const response = await API.post('/tasks/import', itemsToImport);
+      setSuccessMsg(response.data.message || 'Tasks imported successfully!');
+      setTimeout(() => setSuccessMsg(''), 3000);
+      fetchTasks();
+    } catch (err) {
+      setError('Failed to import tasks. Ensure valid JSON format.');
+    } finally {
+      if (fileInputRef.current) fileInputRef.current.value = '';
     }
   };
 
@@ -96,12 +139,28 @@ export default function TaskList() {
     <div className="page">
       <div className="page-header">
         <h1>Tasks</h1>
-        <Link to="/tasks/new" className="btn btn-primary">
-          ➕ New Task
-        </Link>
+        <div className="header-actions" style={{ display: 'flex', gap: '8px' }}>
+          <button onClick={handleExport} className="btn btn-secondary">
+            📥 Export
+          </button>
+          <button onClick={() => fileInputRef.current?.click()} className="btn btn-secondary">
+            📤 Import
+          </button>
+          <input
+            type="file"
+            ref={fileInputRef}
+            style={{ display: 'none' }}
+            accept=".json"
+            onChange={handleImportFileChange}
+          />
+          <Link to="/tasks/new" className="btn btn-primary">
+            ➕ New Task
+          </Link>
+        </div>
       </div>
 
       {error && <div className="alert alert-error">{error}</div>}
+      {successMsg && <div className="alert alert-success">{successMsg}</div>}
 
       <div className="filters">
         <input

@@ -10,5 +10,7 @@ namespace TaskManager.API.Services
         Task<TaskResponseDto> UpdateTaskAsync(int taskId, TaskUpdateDto dto, int userId, string userRole);
         Task<string> DeleteTaskAsync(int taskId, int userId, string userRole);
         Task<DashboardDto> GetDashboardAsync(int userId, string userRole);
+        Task<byte[]> ExportTasksAsync(int userId, string userRole);
+        Task<int> ImportTasksAsync(IEnumerable<TaskCreateDto> dtos, int userId);
     }
 }

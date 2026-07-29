@@ -162,6 +162,48 @@ namespace TaskManager.API.Services
             };
         }
 
+        public async Task<byte[]> ExportTasksAsync(int userId, string userRole)
+        {
+            var tasks = await GetTasksAsync(userId, userRole);
+            var jsonBytes = System.Text.Json.JsonSerializer.SerializeToUtf8Bytes(tasks, new System.Text.Json.JsonSerializerOptions
+            {
+                WriteIndented = true
+            });
+            _logger.LogInformation("User ID {UserId} exported {Count} tasks.", userId, tasks.Count());
+            return jsonBytes;
+        }
+
+        public async Task<int> ImportTasksAsync(IEnumerable<TaskCreateDto> dtos, int userId)
+        {
+            if (dtos == null || !dtos.Any())
+            {
+                return 0;
+            }
+
+            int count = 0;
+            foreach (var dto in dtos)
+            {
+                if (string.IsNullOrWhiteSpace(dto.Title)) continue;
+
+                var task = new TaskItem
+                {
+                    Title = dto.Title,
+                    Description = dto.Description ?? string.Empty,
+                    DueDate = dto.DueDate,
+                    Priority = string.IsNullOrWhiteSpace(dto.Priority) ? "Medium" : dto.Priority,
+                    Status = string.IsNullOrWhiteSpace(dto.Status) ? "Pending" : dto.Status,
+                    Category = dto.Category ?? string.Empty,
+                    AssignedUserId = userId
+                };
+                _context.Tasks.Add(task);
+                count++;
+            }
+
+            await _context.SaveChangesAsync();
+            _logger.LogInformation("User ID {UserId} imported {Count} tasks.", userId, count);
+            return count;
+        }
+
         private static TaskResponseDto MapToResponseDto(TaskItem task)
         {
             return new TaskResponseDto

@@ -197,5 +197,45 @@ namespace TaskManager.Tests.Services
             // Act & Assert
             await Assert.ThrowsAsync<KeyNotFoundException>(() => service.DeleteTaskAsync(created.Id, user2.Id, "User"));
         }
+
+        [Fact]
+        public async Task ExportTasksAsync_ReturnsJsonBytes()
+        {
+            // Arrange
+            var service = CreateService(nameof(ExportTasksAsync_ReturnsJsonBytes), out var context);
+            var user = await SeedUser(context);
+            await service.CreateTaskAsync(new TaskCreateDto { Title = "Export Me", Priority = "High" }, user.Id);
+
+            // Act
+            var bytes = await service.ExportTasksAsync(user.Id, "User");
+
+            // Assert
+            Assert.NotNull(bytes);
+            Assert.NotEmpty(bytes);
+            var json = System.Text.Encoding.UTF8.GetString(bytes);
+            Assert.Contains("Export Me", json);
+        }
+
+        [Fact]
+        public async Task ImportTasksAsync_AddsTasksToDatabase()
+        {
+            // Arrange
+            var service = CreateService(nameof(ImportTasksAsync_AddsTasksToDatabase), out var context);
+            var user = await SeedUser(context);
+
+            var itemsToImport = new List<TaskCreateDto>
+            {
+                new TaskCreateDto { Title = "Imported 1", Priority = "Low", Status = "Pending" },
+                new TaskCreateDto { Title = "Imported 2", Priority = "High", Status = "InProgress" }
+            };
+
+            // Act
+            var count = await service.ImportTasksAsync(itemsToImport, user.Id);
+
+            // Assert
+            Assert.Equal(2, count);
+            var tasks = await service.GetTasksAsync(user.Id, "User");
+            Assert.Equal(2, tasks.Count());
+        }
     }
 }
