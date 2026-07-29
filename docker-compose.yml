@@ -1,0 +1,31 @@
+version: '3.8'
+
+services:
+  api:
+    build:
+      context: ./TaskManager.API
+      dockerfile: Dockerfile
+    ports:
+      - "5011:80"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=TaskManagerDb;User Id=sa;Password=YourSuperSecretPassword123!;TrustServerCertificate=True
+    depends_on:
+      - sqlserver
+
+  ui:
+    build:
+      context: ./TaskManager.UI
+      dockerfile: Dockerfile
+    ports:
+      - "5173:80"
+    depends_on:
+      - api
+
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    environment:
+      - ACCEPT_EULA=Y
+      - MSSQL_SA_PASSWORD=YourSuperSecretPassword123!
+    ports:
+      - "1433:1433"
