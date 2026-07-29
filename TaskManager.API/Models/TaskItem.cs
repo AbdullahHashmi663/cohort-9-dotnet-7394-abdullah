@@ -1,4 +1,4 @@
-﻿namespace TaskManager.API.Models
+namespace TaskManager.API.Models
 {
     public class TaskItem
     {
@@ -15,5 +15,7 @@
 
         public int AssignedUserId { get; set; }
         public User? AssignedUser { get; set; }
+
+        public ICollection<SubTask> SubTasks { get; set; } = new List<SubTask>();
     }
 }

@@ -15,6 +15,8 @@ export default function TaskForm() {
     status: 'Pending',
     category: '',
   });
+  const [subtasks, setSubtasks] = useState([]);
+  const [newSubtaskTitle, setNewSubtaskTitle] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(isEdit);
@@ -37,6 +39,7 @@ export default function TaskForm() {
         status: task.status,
         category: task.category || '',
       });
+      setSubtasks(task.subTasks || []);
     } catch (err) {
       setError('Failed to load task for editing.');
     } finally {
@@ -48,6 +51,16 @@ export default function TaskForm() {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
+  const handleAddSubtask = () => {
+    if (!newSubtaskTitle.trim()) return;
+    setSubtasks([...subtasks, { title: newSubtaskTitle.trim(), isCompleted: false }]);
+    setNewSubtaskTitle('');
+  };
+
+  const handleRemoveSubtask = (index) => {
+    setSubtasks(subtasks.filter((_, i) => i !== index));
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
@@ -56,6 +69,7 @@ export default function TaskForm() {
     const payload = {
       ...formData,
       dueDate: formData.dueDate || null,
+      subTasks: subtasks,
     };
 
     try {
@@ -162,6 +176,36 @@ export default function TaskForm() {
                 onChange={handleChange}
               />
             </div>
+          </div>
+
+          {/* Subtasks Section */}
+          <div className="form-group" style={{ marginTop: '20px' }}>
+            <label>Subtasks / Checklist</label>
+            <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
+              <input
+                type="text"
+                value={newSubtaskTitle}
+                onChange={(e) => setNewSubtaskTitle(e.target.value)}
+                placeholder="Add a subtask item..."
+                onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAddSubtask(); } }}
+              />
+              <button type="button" onClick={handleAddSubtask} className="btn btn-secondary">
+                Add Subtask
+              </button>
+            </div>
+
+            {subtasks.length > 0 && (
+              <ul style={{ listStyle: 'none', padding: 0, display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                {subtasks.map((st, index) => (
+                  <li key={index} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'var(--bg-input)', padding: '8px 12px', borderRadius: 'var(--radius-sm)' }}>
+                    <span>{st.title}</span>
+                    <button type="button" onClick={() => handleRemoveSubtask(index)} className="btn btn-sm btn-danger">
+                      Remove
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
 
           <div className="form-actions">

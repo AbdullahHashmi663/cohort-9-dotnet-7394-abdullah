@@ -24,6 +24,30 @@ export default function TaskDetail() {
     }
   };
 
+  const handleToggleSubtask = async (subtaskId) => {
+    if (!task) return;
+    const updatedSubtasks = task.subTasks.map(st =>
+      st.id === subtaskId ? { ...st, isCompleted: !st.isCompleted } : st
+    );
+
+    const payload = {
+      title: task.title,
+      description: task.description,
+      dueDate: task.dueDate,
+      priority: task.priority,
+      status: task.status,
+      category: task.category,
+      subTasks: updatedSubtasks,
+    };
+
+    try {
+      const response = await API.put(`/tasks/${id}`, payload);
+      setTask(response.data);
+    } catch (err) {
+      setError('Failed to update subtask status.');
+    }
+  };
+
   const handleDelete = async () => {
     if (!window.confirm('Are you sure you want to delete this task?')) return;
 
@@ -52,6 +76,10 @@ export default function TaskDetail() {
       default: return 'badge-default';
     }
   };
+
+  const completedSubtasksCount = task?.subTasks?.filter(st => st.isCompleted).length || 0;
+  const totalSubtasksCount = task?.subTasks?.length || 0;
+  const progressPercent = totalSubtasksCount > 0 ? Math.round((completedSubtasksCount / totalSubtasksCount) * 100) : 0;
 
   if (loading) {
     return (
@@ -109,6 +137,39 @@ export default function TaskDetail() {
                 <p>{task.assignedUserName || 'Unassigned'}</p>
               </div>
             </div>
+
+            {/* Subtasks Section */}
+            {totalSubtasksCount > 0 && (
+              <div style={{ marginTop: '28px', paddingTop: '20px', borderTop: '1px solid var(--border)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                  <strong style={{ fontSize: '14px', color: 'var(--text-secondary)' }}>
+                    Subtasks Checklist ({completedSubtasksCount}/{totalSubtasksCount})
+                  </strong>
+                  <span style={{ fontSize: '13px', fontWeight: '600', color: 'var(--accent)' }}>{progressPercent}% Completed</span>
+                </div>
+
+                {/* Progress bar */}
+                <div style={{ height: '8px', background: 'var(--bg-input)', borderRadius: '4px', overflow: 'hidden', marginBottom: '16px' }}>
+                  <div style={{ width: `${progressPercent}%`, height: '100%', background: 'var(--accent)', transition: 'width 0.3s ease' }}></div>
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  {task.subTasks.map(st => (
+                    <label key={st.id} style={{ display: 'flex', alignItems: 'center', gap: '12px', background: 'var(--bg-input)', padding: '10px 14px', borderRadius: 'var(--radius-sm)', cursor: 'pointer' }}>
+                      <input
+                        type="checkbox"
+                        checked={st.isCompleted}
+                        onChange={() => handleToggleSubtask(st.id)}
+                        style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+                      />
+                      <span style={{ textDecoration: st.isCompleted ? 'line-through' : 'none', opacity: st.isCompleted ? 0.6 : 1, fontSize: '14px' }}>
+                        {st.title}
+                      </span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="detail-actions">

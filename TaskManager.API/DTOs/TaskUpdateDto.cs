@@ -19,5 +19,7 @@ namespace TaskManager.API.DTOs
         public string Status { get; set; } = "Pending";
 
         public string Category { get; set; } = string.Empty;
+
+        public List<SubTaskDto> SubTasks { get; set; } = new List<SubTaskDto>();
     }
 }

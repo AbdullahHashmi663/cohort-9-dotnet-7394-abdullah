@@ -24,7 +24,7 @@ namespace TaskManager.API.Services
         {
             _logger.LogInformation("User ID {UserId} (Role: {Role}) is fetching tasks.", userId, userRole);
 
-            var query = _context.Tasks.Include(t => t.AssignedUser).AsQueryable();
+            var query = _context.Tasks.Include(t => t.AssignedUser).Include(t => t.SubTasks).AsQueryable();
 
             // Admin sees all tasks; regular user sees only their own
             if (userRole != "Admin")
@@ -39,7 +39,7 @@ namespace TaskManager.API.Services
 
         public async Task<TaskResponseDto> GetTaskByIdAsync(int taskId, int userId, string userRole)
         {
-            var query = _context.Tasks.Include(t => t.AssignedUser).AsQueryable();
+            var query = _context.Tasks.Include(t => t.AssignedUser).Include(t => t.SubTasks).AsQueryable();
 
             if (userRole != "Admin")
             {
@@ -67,14 +67,20 @@ namespace TaskManager.API.Services
                 Priority = dto.Priority,
                 Status = dto.Status,
                 Category = dto.Category,
-                AssignedUserId = userId
+                AssignedUserId = userId,
+                SubTasks = dto.SubTasks.Select(st => new SubTask
+                {
+                    Title = st.Title,
+                    IsCompleted = st.IsCompleted
+                }).ToList()
             };
 
             _context.Tasks.Add(task);
             await _context.SaveChangesAsync();
 
-            // Reload with navigation property
+            // Reload with navigation properties
             await _context.Entry(task).Reference(t => t.AssignedUser).LoadAsync();
+            await _context.Entry(task).Collection(t => t.SubTasks).LoadAsync();
 
             _logger.LogInformation("User ID {UserId} created Task ID {TaskId}: {Title}", userId, task.Id, task.Title);
 
@@ -88,7 +94,7 @@ namespace TaskManager.API.Services
 
         public async Task<TaskResponseDto> UpdateTaskAsync(int taskId, TaskUpdateDto dto, int userId, string userRole)
         {
-            var query = _context.Tasks.AsQueryable();
+            var query = _context.Tasks.Include(t => t.SubTasks).AsQueryable();
 
             if (userRole != "Admin")
             {
@@ -109,6 +115,14 @@ namespace TaskManager.API.Services
             task.Priority = dto.Priority;
             task.Status = dto.Status;
             task.Category = dto.Category;
+
+            // Replace existing subtasks with new ones
+            _context.SubTasks.RemoveRange(task.SubTasks);
+            task.SubTasks = dto.SubTasks.Select(st => new SubTask
+            {
+                Title = st.Title,
+                IsCompleted = st.IsCompleted
+            }).ToList();
 
             await _context.SaveChangesAsync();
 
@@ -235,7 +249,13 @@ namespace TaskManager.API.Services
                 Status = task.Status,
                 Category = task.Category,
                 AssignedUserId = task.AssignedUserId,
-                AssignedUserName = task.AssignedUser?.Name ?? string.Empty
+                AssignedUserName = task.AssignedUser?.Name ?? string.Empty,
+                SubTasks = task.SubTasks?.Select(st => new SubTaskDto
+                {
+                    Id = st.Id,
+                    Title = st.Title,
+                    IsCompleted = st.IsCompleted
+                }).ToList() ?? new List<SubTaskDto>()
             };
         }
     }
