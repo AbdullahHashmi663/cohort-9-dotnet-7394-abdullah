@@ -5,5 +5,6 @@ namespace TaskManager.API.Services
     public interface IUserService
     {
         Task<UserProfileDto> GetProfileAsync(int userId);
+        Task<IEnumerable<UserOptionDto>> GetAllUsersAsync();
     }
 }

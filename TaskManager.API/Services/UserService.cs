@@ -38,5 +38,18 @@ namespace TaskManager.API.Services
                 TotalTasks = user.Tasks.Count
             };
         }
+
+        public async Task<IEnumerable<UserOptionDto>> GetAllUsersAsync()
+        {
+            return await _context.Users
+                .Select(u => new UserOptionDto
+                {
+                    Id = u.Id,
+                    Name = u.Name,
+                    Email = u.Email,
+                    Role = u.Role
+                })
+                .ToListAsync();
+        }
     }
 }

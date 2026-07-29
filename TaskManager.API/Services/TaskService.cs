@@ -57,8 +57,12 @@ namespace TaskManager.API.Services
             return MapToResponseDto(task);
         }
 
-        public async Task<TaskResponseDto> CreateTaskAsync(TaskCreateDto dto, int userId)
+        public async Task<TaskResponseDto> CreateTaskAsync(TaskCreateDto dto, int userId, string userRole = "User")
         {
+            int targetUserId = (userRole == "Admin" && dto.AssignedUserId.HasValue && dto.AssignedUserId.Value > 0)
+                ? dto.AssignedUserId.Value
+                : userId;
+
             var task = new TaskItem
             {
                 Title = dto.Title,
@@ -67,7 +71,7 @@ namespace TaskManager.API.Services
                 Priority = dto.Priority,
                 Status = dto.Status,
                 Category = dto.Category,
-                AssignedUserId = userId,
+                AssignedUserId = targetUserId,
                 SubTasks = dto.SubTasks.Select(st => new SubTask
                 {
                     Title = st.Title,
@@ -82,7 +86,7 @@ namespace TaskManager.API.Services
             await _context.Entry(task).Reference(t => t.AssignedUser).LoadAsync();
             await _context.Entry(task).Collection(t => t.SubTasks).LoadAsync();
 
-            _logger.LogInformation("User ID {UserId} created Task ID {TaskId}: {Title}", userId, task.Id, task.Title);
+            _logger.LogInformation("User ID {UserId} created Task ID {TaskId}: {Title} (Assigned to User ID {AssignedUserId})", userId, task.Id, task.Title, task.AssignedUserId);
 
             var responseDto = MapToResponseDto(task);
             if (_hubContext != null)
@@ -115,6 +119,11 @@ namespace TaskManager.API.Services
             task.Priority = dto.Priority;
             task.Status = dto.Status;
             task.Category = dto.Category;
+
+            if (userRole == "Admin" && dto.AssignedUserId.HasValue && dto.AssignedUserId.Value > 0)
+            {
+                task.AssignedUserId = dto.AssignedUserId.Value;
+            }
 
             // Replace existing subtasks with new ones
             _context.SubTasks.RemoveRange(task.SubTasks);

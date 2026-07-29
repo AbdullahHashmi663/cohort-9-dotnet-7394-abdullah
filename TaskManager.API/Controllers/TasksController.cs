@@ -84,7 +84,8 @@ namespace TaskManager.API.Controllers
         public async Task<IActionResult> CreateTask([FromBody] TaskCreateDto taskInput)
         {
             var userId = GetCurrentUserId();
-            var task = await _taskService.CreateTaskAsync(taskInput, userId);
+            var userRole = GetCurrentUserRole();
+            var task = await _taskService.CreateTaskAsync(taskInput, userId, userRole);
             return CreatedAtAction(nameof(GetTask), new { id = task.Id }, task);
         }
 

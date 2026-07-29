@@ -26,6 +26,14 @@ namespace TaskManager.API.Controllers
             return Ok(profile);
         }
 
+        // GET: api/user/all
+        [HttpGet("all")]
+        public async Task<IActionResult> GetAllUsers()
+        {
+            var users = await _userService.GetAllUsersAsync();
+            return Ok(users);
+        }
+
         private int GetCurrentUserId()
         {
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;

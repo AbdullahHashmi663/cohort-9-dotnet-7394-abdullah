@@ -6,7 +6,7 @@ namespace TaskManager.API.Services
     {
         Task<IEnumerable<TaskResponseDto>> GetTasksAsync(int userId, string userRole);
         Task<TaskResponseDto> GetTaskByIdAsync(int taskId, int userId, string userRole);
-        Task<TaskResponseDto> CreateTaskAsync(TaskCreateDto dto, int userId);
+        Task<TaskResponseDto> CreateTaskAsync(TaskCreateDto dto, int userId, string userRole = "User");
         Task<TaskResponseDto> UpdateTaskAsync(int taskId, TaskUpdateDto dto, int userId, string userRole);
         Task<string> DeleteTaskAsync(int taskId, int userId, string userRole);
         Task<DashboardDto> GetDashboardAsync(int userId, string userRole);

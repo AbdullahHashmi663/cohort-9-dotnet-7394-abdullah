@@ -203,6 +203,7 @@ export default function TaskList() {
               <p className="task-description">{task.description || 'No description'}</p>
               <div className="task-card-footer">
                 <div className="task-meta">
+                  {task.assignedUserName && <span className="task-assigned" style={{ fontSize: '12px', opacity: 0.85 }}>👤 {task.assignedUserName}</span>}
                   {task.category && <span className="task-category">📁 {task.category}</span>}
                   {task.dueDate && (
                     <span className="task-due-date">

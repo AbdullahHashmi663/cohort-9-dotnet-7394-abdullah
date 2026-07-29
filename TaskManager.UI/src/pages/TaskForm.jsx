@@ -2,11 +2,14 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import API from '../api/axiosInstance';
 import Loader from '../components/Loader';
+import { useAuth } from '../context/AuthContext';
 
 export default function TaskForm() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user: currentUser } = useAuth();
   const isEdit = Boolean(id);
+  const isAdmin = currentUser?.role === 'Admin';
 
   const [formData, setFormData] = useState({
     title: '',
@@ -15,38 +18,46 @@ export default function TaskForm() {
     priority: 'Medium',
     status: 'Pending',
     category: '',
+    assignedUserId: '',
   });
+  const [usersList, setUsersList] = useState([]);
   const [subtasks, setSubtasks] = useState([]);
   const [newSubtaskTitle, setNewSubtaskTitle] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [fetching, setFetching] = useState(isEdit);
+  const [fetching, setFetching] = useState(true);
 
   useEffect(() => {
-    if (isEdit) {
-      fetchTask();
-    }
-  }, [id]);
+    const initData = async () => {
+      try {
+        if (isAdmin) {
+          const usersRes = await API.get('/user/all');
+          setUsersList(usersRes.data);
+        }
 
-  const fetchTask = async () => {
-    try {
-      const response = await API.get(`/tasks/${id}`);
-      const task = response.data;
-      setFormData({
-        title: task.title,
-        description: task.description || '',
-        dueDate: task.dueDate ? task.dueDate.split('T')[0] : '',
-        priority: task.priority,
-        status: task.status,
-        category: task.category || '',
-      });
-      setSubtasks(task.subTasks || []);
-    } catch (err) {
-      setError('Failed to load task for editing.');
-    } finally {
-      setFetching(false);
-    }
-  };
+        if (isEdit) {
+          const taskRes = await API.get(`/tasks/${id}`);
+          const task = taskRes.data;
+          setFormData({
+            title: task.title,
+            description: task.description || '',
+            dueDate: task.dueDate ? task.dueDate.split('T')[0] : '',
+            priority: task.priority,
+            status: task.status,
+            category: task.category || '',
+            assignedUserId: task.assignedUserId || '',
+          });
+          setSubtasks(task.subTasks || []);
+        }
+      } catch (err) {
+        setError('Failed to initialize task form.');
+      } finally {
+        setFetching(false);
+      }
+    };
+
+    initData();
+  }, [id, isEdit, isAdmin]);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -70,6 +81,7 @@ export default function TaskForm() {
     const payload = {
       ...formData,
       dueDate: formData.dueDate || null,
+      assignedUserId: formData.assignedUserId ? parseInt(formData.assignedUserId, 10) : null,
       subTasks: subtasks,
     };
 
@@ -90,7 +102,7 @@ export default function TaskForm() {
   if (fetching) {
     return (
       <div className="page">
-        <Loader text="Loading task..." />
+        <Loader text="Loading task form..." />
       </div>
     );
   }
@@ -175,6 +187,26 @@ export default function TaskForm() {
               />
             </div>
           </div>
+
+          {/* Admin Task Assignment Field */}
+          {isAdmin && (
+            <div className="form-group">
+              <label htmlFor="assignedUserId">👤 Assign To User (Admin Only)</label>
+              <select
+                id="assignedUserId"
+                name="assignedUserId"
+                value={formData.assignedUserId}
+                onChange={handleChange}
+              >
+                <option value="">-- Myself ({currentUser?.name}) --</option>
+                {usersList.map((u) => (
+                  <option key={u.id} value={u.id}>
+                    {u.name} ({u.email}) [{u.role}]
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
 
           {/* Subtasks Section */}
           <div className="form-group" style={{ marginTop: '20px' }}>
