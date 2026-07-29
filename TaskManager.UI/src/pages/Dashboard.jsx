@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import API from '../api/axiosInstance';
 import { useAuth } from '../context/AuthContext';
 import Loader from '../components/Loader';
+import { Clock, RefreshCw, CheckCircle2, FolderKanban, Plus, ListTodo } from 'lucide-react';
 
 export default function Dashboard() {
   const [stats, setStats] = useState(null);
@@ -45,7 +46,9 @@ export default function Dashboard() {
       {stats && (
         <div className="stats-grid">
           <div className="stat-card stat-pending">
-            <div className="stat-icon">⏳</div>
+            <div className="stat-icon" style={{ color: '#e07a5f' }}>
+              <Clock size={32} />
+            </div>
             <div className="stat-info">
               <h3>{stats.pendingCount}</h3>
               <p>Pending</p>
@@ -53,7 +56,9 @@ export default function Dashboard() {
           </div>
 
           <div className="stat-card stat-inprogress">
-            <div className="stat-icon">🔄</div>
+            <div className="stat-icon" style={{ color: '#38bdf8' }}>
+              <RefreshCw size={32} />
+            </div>
             <div className="stat-info">
               <h3>{stats.inProgressCount}</h3>
               <p>In Progress</p>
@@ -61,7 +66,9 @@ export default function Dashboard() {
           </div>
 
           <div className="stat-card stat-completed">
-            <div className="stat-icon">✅</div>
+            <div className="stat-icon" style={{ color: '#10b981' }}>
+              <CheckCircle2 size={32} />
+            </div>
             <div className="stat-info">
               <h3>{stats.completedCount}</h3>
               <p>Completed</p>
@@ -69,7 +76,9 @@ export default function Dashboard() {
           </div>
 
           <div className="stat-card stat-total">
-            <div className="stat-icon">📊</div>
+            <div className="stat-icon" style={{ color: '#3c6e71' }}>
+              <FolderKanban size={32} />
+            </div>
             <div className="stat-info">
               <h3>{stats.totalCount}</h3>
               <p>Total Tasks</p>
@@ -82,10 +91,10 @@ export default function Dashboard() {
         <h2>Quick Actions</h2>
         <div className="action-buttons">
           <Link to="/tasks/new" className="btn btn-primary">
-            ➕ Create New Task
+            <Plus size={18} /> Create New Task
           </Link>
           <Link to="/tasks" className="btn btn-secondary">
-            📋 View All Tasks
+            <ListTodo size={18} /> View All Tasks
           </Link>
         </div>
       </div>

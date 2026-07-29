@@ -3,6 +3,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import API from '../api/axiosInstance';
 import Loader from '../components/Loader';
 import { useAuth } from '../context/AuthContext';
+import { ArrowLeft, Edit3, Trash2, RotateCcw, Lock, User, CheckSquare } from 'lucide-react';
 
 export default function TaskDetail() {
   const { id } = useParams();
@@ -105,7 +106,9 @@ export default function TaskDetail() {
     return (
       <div className="page">
         <div className="alert alert-error">{error}</div>
-        <Link to="/tasks" className="btn btn-secondary">← Back to Tasks</Link>
+        <Link to="/tasks" className="btn btn-secondary">
+          <ArrowLeft size={16} /> Back to Tasks
+        </Link>
       </div>
     );
   }
@@ -114,7 +117,9 @@ export default function TaskDetail() {
     <div className="page">
       <div className="page-header">
         <h1>Task Details</h1>
-        <Link to="/tasks" className="btn btn-secondary">← Back to Tasks</Link>
+        <Link to="/tasks" className="btn btn-secondary">
+          <ArrowLeft size={16} /> Back to Tasks
+        </Link>
       </div>
 
       {task && (
@@ -124,14 +129,20 @@ export default function TaskDetail() {
             <div className="task-badges">
               <span className={`badge ${getPriorityClass(task.priority)}`}>{task.priority} Priority</span>
               <span className={`badge ${getStatusClass(task.status)}`}>{task.status}</span>
-              {task.isAdminAssigned && <span className="badge badge-warning">🔒 Admin Assigned</span>}
+              {task.isAdminAssigned && (
+                <span className="badge badge-warning" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                  <Lock size={12} /> Admin Assigned
+                </span>
+              )}
             </div>
           </div>
 
           <div className="detail-body">
             <div className="detail-row">
               <strong>Assigned To:</strong>
-              <span>👤 {task.assignedUserName || 'Unassigned'}</span>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                <User size={14} /> {task.assignedUserName || 'Unassigned'}
+              </span>
             </div>
 
             <div className="detail-row">
@@ -157,7 +168,9 @@ export default function TaskDetail() {
             {task.subTasks && task.subTasks.length > 0 && (
               <div style={{ marginTop: '24px', borderTop: '1px solid var(--border)', paddingTop: '20px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                  <h3 style={{ fontSize: '16px', fontWeight: '600' }}>Checklist / Subtasks</h3>
+                  <h3 style={{ fontSize: '16px', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <CheckSquare size={18} /> Checklist / Subtasks
+                  </h3>
                   <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
                     {completedSubtasksCount} of {totalSubtasksCount} completed ({progressPercent}%)
                   </span>
@@ -189,19 +202,23 @@ export default function TaskDetail() {
           <div className="detail-actions">
             {task.isDeleted ? (
               user?.role === 'Admin' && (
-                <button onClick={handleRestore} className="btn btn-primary">
-                  🔄 Restore Task
+                <button onClick={handleRestore} className="btn btn-primary" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                  <RotateCcw size={16} /> Restore Task
                 </button>
               )
             ) : (
               <>
-                <Link to={`/tasks/edit/${task.id}`} className="btn btn-primary">Edit Task</Link>
+                <Link to={`/tasks/edit/${task.id}`} className="btn btn-primary" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                  <Edit3 size={16} /> Edit Task
+                </Link>
                 {task.isAdminAssigned && user?.role !== 'Admin' ? (
-                  <span className="badge badge-warning" style={{ fontSize: '12px', padding: '10px 16px' }}>
-                    🔒 Admin Assigned (Deletion Restricted)
+                  <span className="badge badge-warning" style={{ fontSize: '12px', padding: '10px 16px', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                    <Lock size={14} /> Admin Assigned (Deletion Restricted)
                   </span>
                 ) : (
-                  <button onClick={handleDelete} className="btn btn-danger">Delete Task</button>
+                  <button onClick={handleDelete} className="btn btn-danger" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+                    <Trash2 size={16} /> Delete Task
+                  </button>
                 )}
               </>
             )}

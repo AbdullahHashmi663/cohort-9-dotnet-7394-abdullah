@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import API from '../api/axiosInstance';
+import { CheckSquare, User, Mail, Lock, UserPlus } from 'lucide-react';
 
 export default function Signup() {
   const [name, setName] = useState('');
@@ -45,7 +46,9 @@ export default function Signup() {
       <div className="auth-card">
         <div className="auth-header">
           <div className="auth-brand">
-            <div className="brand-icon">✓</div>
+            <div className="brand-icon">
+              <CheckSquare size={22} strokeWidth={2.5} />
+            </div>
             <h1>TaskManager</h1>
           </div>
           <p>Create your account</p>
@@ -56,7 +59,9 @@ export default function Signup() {
 
         <form onSubmit={handleSubmit} className="auth-form">
           <div className="form-group">
-            <label htmlFor="name">Full Name</label>
+            <label htmlFor="name" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <User size={14} /> Full Name
+            </label>
             <input
               id="name"
               type="text"
@@ -68,7 +73,9 @@ export default function Signup() {
           </div>
 
           <div className="form-group">
-            <label htmlFor="email">Email</label>
+            <label htmlFor="email" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <Mail size={14} /> Email
+            </label>
             <input
               id="email"
               type="email"
@@ -80,7 +87,9 @@ export default function Signup() {
           </div>
 
           <div className="form-group">
-            <label htmlFor="password">Password</label>
+            <label htmlFor="password" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <Lock size={14} /> Password
+            </label>
             <input
               id="password"
               type="password"
@@ -92,7 +101,9 @@ export default function Signup() {
           </div>
 
           <div className="form-group">
-            <label htmlFor="confirmPassword">Confirm Password</label>
+            <label htmlFor="confirmPassword" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <Lock size={14} /> Confirm Password
+            </label>
             <input
               id="confirmPassword"
               type="password"
@@ -103,8 +114,8 @@ export default function Signup() {
             />
           </div>
 
-          <button type="submit" className="btn btn-primary btn-full" disabled={loading}>
-            {loading ? 'Creating Account...' : 'Create Account'}
+          <button type="submit" className="btn btn-primary btn-full" disabled={loading} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+            <UserPlus size={16} /> {loading ? 'Creating Account...' : 'Create Account'}
           </button>
         </form>
 

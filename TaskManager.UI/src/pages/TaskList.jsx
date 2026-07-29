@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import API from '../api/axiosInstance';
 import Loader from '../components/Loader';
 import { useAuth } from '../context/AuthContext';
+import { Download, Upload, Plus, Search, Folder, Calendar, User, Lock, Trash2, RotateCcw, Edit3 } from 'lucide-react';
 
 export default function TaskList() {
   const { user } = useAuth();
@@ -159,10 +160,10 @@ export default function TaskList() {
         <h1>Tasks</h1>
         <div style={{ display: 'flex', gap: '10px' }}>
           <button onClick={handleExport} className="btn btn-secondary">
-            📥 Export
+            <Download size={16} /> Export
           </button>
           <button onClick={handleImportClick} className="btn btn-secondary">
-            📤 Import
+            <Upload size={16} /> Import
           </button>
           <input
             type="file"
@@ -172,7 +173,7 @@ export default function TaskList() {
             onChange={handleImportFileChange}
           />
           <Link to="/tasks/new" className="btn btn-primary">
-            ➕ New Task
+            <Plus size={16} /> New Task
           </Link>
         </div>
       </div>
@@ -181,19 +182,23 @@ export default function TaskList() {
       {successMsg && <div className="alert alert-success">{successMsg}</div>}
 
       <div className="filters">
-        <input
-          type="text"
-          className="search-input"
-          placeholder="Search tasks..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-        />
+        <div style={{ position: 'relative', flex: 1 }}>
+          <Search size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
+          <input
+            type="text"
+            className="search-input"
+            style={{ paddingLeft: '36px', width: '100%' }}
+            placeholder="Search tasks..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
         <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="filter-select">
           <option value="All">All Status</option>
           <option value="Pending">Pending</option>
           <option value="InProgress">In Progress</option>
           <option value="Completed">Completed</option>
-          {user?.role === 'Admin' && <option value="Deleted">🗑️ Deleted Tasks</option>}
+          {user?.role === 'Admin' && <option value="Deleted">Deleted Tasks</option>}
         </select>
         <select value={priorityFilter} onChange={(e) => setPriorityFilter(e.target.value)} className="filter-select">
           <option value="All">All Priority</option>
@@ -206,19 +211,23 @@ export default function TaskList() {
       {filteredTasks.length === 0 ? (
         <div className="empty-state">
           <p>No tasks found.</p>
-          <Link to="/tasks/new" className="btn btn-primary">Create your first task</Link>
+          <Link to="/tasks/new" className="btn btn-primary">
+            <Plus size={16} /> Create your first task
+          </Link>
         </div>
       ) : (
         <div className="task-list">
           {filteredTasks.map((task) => (
-            <div key={task.id} className="task-card" style={task.isDeleted ? { opacity: 0.75, borderColor: '#ef4444' } : {}}>
+            <div key={task.id} className="task-card" style={task.isDeleted ? { opacity: 0.75, borderColor: '#d90429' } : {}}>
               <div className="task-card-header">
                 <h3>
                   <Link to={`/tasks/${task.id}`}>{task.title}</Link>
                 </h3>
                 <div className="task-badges">
                   {task.isDeleted ? (
-                    <span className="badge badge-danger">🗑️ Deleted</span>
+                    <span className="badge badge-danger" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                      <Trash2 size={12} /> Deleted
+                    </span>
                   ) : (
                     <>
                       <span className={`badge ${getPriorityClass(task.priority)}`}>{task.priority}</span>
@@ -230,28 +239,42 @@ export default function TaskList() {
               <p className="task-description">{task.description || 'No description'}</p>
               <div className="task-card-footer">
                 <div className="task-meta">
-                  {task.assignedUserName && <span className="task-assigned" style={{ fontSize: '12px', opacity: 0.85 }}>👤 {task.assignedUserName}</span>}
-                  {task.category && <span className="task-category">📁 {task.category}</span>}
+                  {task.assignedUserName && (
+                    <span className="task-assigned" style={{ fontSize: '12px', opacity: 0.85, display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                      <User size={12} /> {task.assignedUserName}
+                    </span>
+                  )}
+                  {task.category && (
+                    <span className="task-category" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                      <Folder size={12} /> {task.category}
+                    </span>
+                  )}
                   {task.dueDate && (
-                    <span className="task-due-date">
-                      📅 {new Date(task.dueDate).toLocaleDateString()}
+                    <span className="task-due-date" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                      <Calendar size={12} /> {new Date(task.dueDate).toLocaleDateString()}
                     </span>
                   )}
                 </div>
                 <div className="task-actions">
                   {task.isDeleted ? (
                     user?.role === 'Admin' && (
-                      <button onClick={() => handleRestore(task.id)} className="btn btn-sm btn-primary">
-                        🔄 Restore
+                      <button onClick={() => handleRestore(task.id)} className="btn btn-sm btn-primary" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                        <RotateCcw size={14} /> Restore
                       </button>
                     )
                   ) : (
                     <>
-                      <Link to={`/tasks/edit/${task.id}`} className="btn btn-sm btn-secondary">Edit</Link>
+                      <Link to={`/tasks/edit/${task.id}`} className="btn btn-sm btn-secondary" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                        <Edit3 size={14} /> Edit
+                      </Link>
                       {task.isAdminAssigned && user?.role !== 'Admin' ? (
-                        <span className="badge badge-warning" style={{ fontSize: '11px' }} title="Task assigned by Admin cannot be deleted by user">🔒 Admin Assigned</span>
+                        <span className="badge badge-warning" style={{ fontSize: '11px', display: 'inline-flex', alignItems: 'center', gap: '4px' }} title="Task assigned by Admin cannot be deleted by user">
+                          <Lock size={12} /> Admin Assigned
+                        </span>
                       ) : (
-                        <button onClick={() => handleDelete(task.id)} className="btn btn-sm btn-danger">Delete</button>
+                        <button onClick={() => handleDelete(task.id)} className="btn btn-sm btn-danger" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                          <Trash2 size={14} /> Delete
+                        </button>
                       )}
                     </>
                   )}

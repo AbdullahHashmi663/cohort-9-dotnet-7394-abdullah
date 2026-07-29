@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import API from '../api/axiosInstance';
 import { useAuth } from '../context/AuthContext';
+import { CheckSquare, Mail, Lock, LogIn } from 'lucide-react';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -33,7 +34,9 @@ export default function Login() {
       <div className="auth-card">
         <div className="auth-header">
           <div className="auth-brand">
-            <div className="brand-icon">✓</div>
+            <div className="brand-icon">
+              <CheckSquare size={22} strokeWidth={2.5} />
+            </div>
             <h1>TaskManager</h1>
           </div>
           <p>Sign in to your account</p>
@@ -43,7 +46,9 @@ export default function Login() {
 
         <form onSubmit={handleSubmit} className="auth-form">
           <div className="form-group">
-            <label htmlFor="email">Email</label>
+            <label htmlFor="email" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <Mail size={14} /> Email
+            </label>
             <input
               id="email"
               type="email"
@@ -55,7 +60,9 @@ export default function Login() {
           </div>
 
           <div className="form-group">
-            <label htmlFor="password">Password</label>
+            <label htmlFor="password" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <Lock size={14} /> Password
+            </label>
             <input
               id="password"
               type="password"
@@ -66,8 +73,8 @@ export default function Login() {
             />
           </div>
 
-          <button type="submit" className="btn btn-primary btn-full" disabled={loading}>
-            {loading ? 'Signing in...' : 'Sign In'}
+          <button type="submit" className="btn btn-primary btn-full" disabled={loading} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+            <LogIn size={16} /> {loading ? 'Signing in...' : 'Sign In'}
           </button>
         </form>
 

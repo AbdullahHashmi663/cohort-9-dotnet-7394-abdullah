@@ -3,6 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import API from '../api/axiosInstance';
 import Loader from '../components/Loader';
 import { useAuth } from '../context/AuthContext';
+import { ArrowLeft, Save, Plus, Trash2, UserCheck, CheckSquare } from 'lucide-react';
 
 export default function TaskForm() {
   const { id } = useParams();
@@ -111,7 +112,9 @@ export default function TaskForm() {
     <div className="page">
       <div className="page-header">
         <h1>{isEdit ? 'Edit Task' : 'Create New Task'}</h1>
-        <Link to="/tasks" className="btn btn-secondary">← Back to Tasks</Link>
+        <Link to="/tasks" className="btn btn-secondary" style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+          <ArrowLeft size={16} /> Back to Tasks
+        </Link>
       </div>
 
       {error && <div className="alert alert-error">{error}</div>}
@@ -191,7 +194,9 @@ export default function TaskForm() {
           {/* Admin Task Assignment Field */}
           {isAdmin && (
             <div className="form-group">
-              <label htmlFor="assignedUserId">👤 Assign To User (Admin Only)</label>
+              <label htmlFor="assignedUserId" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <UserCheck size={16} /> Assign To User (Admin Only)
+              </label>
               <select
                 id="assignedUserId"
                 name="assignedUserId"
@@ -210,7 +215,9 @@ export default function TaskForm() {
 
           {/* Subtasks Section */}
           <div className="form-group" style={{ marginTop: '20px' }}>
-            <label>Subtasks / Checklist</label>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <CheckSquare size={16} /> Subtasks / Checklist
+            </label>
             <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
               <input
                 type="text"
@@ -219,8 +226,8 @@ export default function TaskForm() {
                 placeholder="Add a subtask item..."
                 onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleAddSubtask(); } }}
               />
-              <button type="button" onClick={handleAddSubtask} className="btn btn-secondary">
-                Add Subtask
+              <button type="button" onClick={handleAddSubtask} className="btn btn-secondary" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                <Plus size={16} /> Add
               </button>
             </div>
 
@@ -229,8 +236,8 @@ export default function TaskForm() {
                 {subtasks.map((st, index) => (
                   <li key={index} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'var(--bg-input)', padding: '8px 12px', borderRadius: 'var(--radius-sm)' }}>
                     <span>{st.title}</span>
-                    <button type="button" onClick={() => handleRemoveSubtask(index)} className="btn btn-sm btn-danger">
-                      Remove
+                    <button type="button" onClick={() => handleRemoveSubtask(index)} className="btn btn-sm btn-danger" style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                      <Trash2 size={12} /> Remove
                     </button>
                   </li>
                 ))}
@@ -239,8 +246,8 @@ export default function TaskForm() {
           </div>
 
           <div className="form-actions">
-            <button type="submit" className="btn btn-primary" disabled={loading}>
-              {loading ? 'Saving...' : (isEdit ? 'Update Task' : 'Create Task')}
+            <button type="submit" className="btn btn-primary" disabled={loading} style={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+              <Save size={16} /> {loading ? 'Saving...' : (isEdit ? 'Update Task' : 'Create Task')}
             </button>
             <Link to="/tasks" className="btn btn-secondary">Cancel</Link>
           </div>
