@@ -26,7 +26,7 @@ export default function Layout() {
             <LayoutDashboard size={18} className="nav-icon" />
             Dashboard
           </NavLink>
-          <NavLink to="/tasks" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
+          <NavLink to="/tasks" end className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
             <CheckSquare size={18} className="nav-icon" />
             Tasks
           </NavLink>
