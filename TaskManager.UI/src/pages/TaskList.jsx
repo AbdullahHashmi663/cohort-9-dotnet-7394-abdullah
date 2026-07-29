@@ -2,8 +2,10 @@ import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import API from '../api/axiosInstance';
 import Loader from '../components/Loader';
+import { useAuth } from '../context/AuthContext';
 
 export default function TaskList() {
+  const { user } = useAuth();
   const [tasks, setTasks] = useState([]);
   const [filteredTasks, setFilteredTasks] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -213,7 +215,11 @@ export default function TaskList() {
                 </div>
                 <div className="task-actions">
                   <Link to={`/tasks/edit/${task.id}`} className="btn btn-sm btn-secondary">Edit</Link>
-                  <button onClick={() => handleDelete(task.id)} className="btn btn-sm btn-danger">Delete</button>
+                  {task.isAdminAssigned && user?.role !== 'Admin' ? (
+                    <span className="badge badge-warning" style={{ fontSize: '11px' }} title="Task assigned by Admin cannot be deleted by user">🔒 Admin Assigned</span>
+                  ) : (
+                    <button onClick={() => handleDelete(task.id)} className="btn btn-sm btn-danger">Delete</button>
+                  )}
                 </div>
               </div>
             </div>

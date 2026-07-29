@@ -63,6 +63,8 @@ namespace TaskManager.API.Services
                 ? dto.AssignedUserId.Value
                 : userId;
 
+            bool isAdminAssigned = (userRole == "Admin" && dto.AssignedUserId.HasValue && dto.AssignedUserId.Value > 0 && dto.AssignedUserId.Value != userId);
+
             var task = new TaskItem
             {
                 Title = dto.Title,
@@ -72,6 +74,7 @@ namespace TaskManager.API.Services
                 Status = dto.Status,
                 Category = dto.Category,
                 AssignedUserId = targetUserId,
+                IsAdminAssigned = isAdminAssigned,
                 SubTasks = dto.SubTasks.Select(st => new SubTask
                 {
                     Title = st.Title,
@@ -123,6 +126,10 @@ namespace TaskManager.API.Services
             if (userRole == "Admin" && dto.AssignedUserId.HasValue && dto.AssignedUserId.Value > 0)
             {
                 task.AssignedUserId = dto.AssignedUserId.Value;
+                if (dto.AssignedUserId.Value != userId)
+                {
+                    task.IsAdminAssigned = true;
+                }
             }
 
             // Replace existing subtasks with new ones
@@ -163,6 +170,12 @@ namespace TaskManager.API.Services
             {
                 _logger.LogWarning("User ID {UserId} failed to delete Task ID {TaskId} — not found or access denied.", userId, taskId);
                 throw new KeyNotFoundException("Task not found or access denied.");
+            }
+
+            if (userRole != "Admin" && task.IsAdminAssigned)
+            {
+                _logger.LogWarning("User ID {UserId} attempted to delete Admin-assigned Task ID {TaskId}.", userId, taskId);
+                throw new InvalidOperationException("Tasks assigned by an Admin cannot be deleted by a regular user.");
             }
 
             // Soft delete
@@ -259,6 +272,7 @@ namespace TaskManager.API.Services
                 Category = task.Category,
                 AssignedUserId = task.AssignedUserId,
                 AssignedUserName = task.AssignedUser?.Name ?? string.Empty,
+                IsAdminAssigned = task.IsAdminAssigned,
                 SubTasks = task.SubTasks?.Select(st => new SubTaskDto
                 {
                     Id = st.Id,

@@ -11,6 +11,7 @@ namespace TaskManager.API.DTOs
         public string Category { get; set; } = string.Empty;
         public int AssignedUserId { get; set; }
         public string AssignedUserName { get; set; } = string.Empty;
+        public bool IsAdminAssigned { get; set; }
         public List<SubTaskDto> SubTasks { get; set; } = new List<SubTaskDto>();
     }
 }

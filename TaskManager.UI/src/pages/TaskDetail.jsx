@@ -2,10 +2,12 @@ import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import API from '../api/axiosInstance';
 import Loader from '../components/Loader';
+import { useAuth } from '../context/AuthContext';
 
 export default function TaskDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [task, setTask] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -56,7 +58,7 @@ export default function TaskDetail() {
       await API.delete(`/tasks/${id}`);
       navigate('/tasks');
     } catch (err) {
-      setError('Failed to delete task.');
+      setError(err.response?.data?.message || 'Failed to delete task.');
     }
   };
 
@@ -102,51 +104,56 @@ export default function TaskDetail() {
   return (
     <div className="page">
       <div className="page-header">
+        <h1>Task Details</h1>
         <Link to="/tasks" className="btn btn-secondary">← Back to Tasks</Link>
       </div>
 
       {task && (
         <div className="detail-card">
           <div className="detail-header">
-            <h1>{task.title}</h1>
+            <h2>{task.title}</h2>
             <div className="task-badges">
-              <span className={`badge ${getPriorityClass(task.priority)}`}>{task.priority}</span>
+              <span className={`badge ${getPriorityClass(task.priority)}`}>{task.priority} Priority</span>
               <span className={`badge ${getStatusClass(task.status)}`}>{task.status}</span>
+              {task.isAdminAssigned && <span className="badge badge-warning">🔒 Admin Assigned</span>}
             </div>
           </div>
 
           <div className="detail-body">
             <div className="detail-row">
-              <strong>Description</strong>
+              <strong>Assigned To:</strong>
+              <span>👤 {task.assignedUserName || 'Unassigned'}</span>
+            </div>
+
+            <div className="detail-row">
+              <strong>Description:</strong>
               <p>{task.description || 'No description provided.'}</p>
             </div>
 
             <div className="detail-grid">
-              <div className="detail-row">
-                <strong>Category</strong>
-                <p>{task.category || 'None'}</p>
+              <div className="detail-item">
+                <span className="detail-label">Category</span>
+                <span className="detail-value">{task.category || 'Uncategorized'}</span>
               </div>
-              <div className="detail-row">
-                <strong>Due Date</strong>
-                <p>{task.dueDate ? new Date(task.dueDate).toLocaleDateString() : 'Not set'}</p>
-              </div>
-              <div className="detail-row">
-                <strong>Assigned To</strong>
-                <p>{task.assignedUserName || 'Unassigned'}</p>
+
+              <div className="detail-item">
+                <span className="detail-label">Due Date</span>
+                <span className="detail-value">
+                  {task.dueDate ? new Date(task.dueDate).toLocaleDateString() : 'No due date'}
+                </span>
               </div>
             </div>
 
             {/* Subtasks Section */}
-            {totalSubtasksCount > 0 && (
-              <div style={{ marginTop: '28px', paddingTop: '20px', borderTop: '1px solid var(--border)' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                  <strong style={{ fontSize: '14px', color: 'var(--text-secondary)' }}>
-                    Subtasks Checklist ({completedSubtasksCount}/{totalSubtasksCount})
-                  </strong>
-                  <span style={{ fontSize: '13px', fontWeight: '600', color: 'var(--accent)' }}>{progressPercent}% Completed</span>
+            {task.subTasks && task.subTasks.length > 0 && (
+              <div style={{ marginTop: '24px', borderTop: '1px solid var(--border)', paddingTop: '20px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                  <h3 style={{ fontSize: '16px', fontWeight: '600' }}>Checklist / Subtasks</h3>
+                  <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
+                    {completedSubtasksCount} of {totalSubtasksCount} completed ({progressPercent}%)
+                  </span>
                 </div>
 
-                {/* Progress bar */}
                 <div style={{ height: '8px', background: 'var(--bg-input)', borderRadius: '4px', overflow: 'hidden', marginBottom: '16px' }}>
                   <div style={{ width: `${progressPercent}%`, height: '100%', background: 'var(--accent)', transition: 'width 0.3s ease' }}></div>
                 </div>
@@ -172,7 +179,13 @@ export default function TaskDetail() {
 
           <div className="detail-actions">
             <Link to={`/tasks/edit/${task.id}`} className="btn btn-primary">Edit Task</Link>
-            <button onClick={handleDelete} className="btn btn-danger">Delete Task</button>
+            {task.isAdminAssigned && user?.role !== 'Admin' ? (
+              <span className="badge badge-warning" style={{ fontSize: '12px', padding: '10px 16px' }}>
+                🔒 Admin Assigned (Deletion Restricted)
+              </span>
+            ) : (
+              <button onClick={handleDelete} className="btn btn-danger">Delete Task</button>
+            )}
           </div>
         </div>
       )}

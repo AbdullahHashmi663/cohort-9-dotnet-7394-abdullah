@@ -13,6 +13,9 @@ namespace TaskManager.API.Models
         // Soft delete flag
         public bool IsDeleted { get; set; } = false;
 
+        // Admin assignment flag
+        public bool IsAdminAssigned { get; set; } = false;
+
         public int AssignedUserId { get; set; }
         public User? AssignedUser { get; set; }
 
