@@ -1,9 +1,8 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
-using TaskManager.API.Data;
-using TaskManager.API.Models;
+using TaskManager.API.DTOs;
+using TaskManager.API.Services;
 
 namespace TaskManager.API.Controllers
 {
@@ -12,13 +11,11 @@ namespace TaskManager.API.Controllers
     [ApiController]
     public class TasksController : ControllerBase
     {
-        private readonly AppDbContext _context;
-        private readonly ILogger<TasksController> _logger;
+        private readonly ITaskService _taskService;
 
-        public TasksController(AppDbContext context, ILogger<TasksController> logger)
+        public TasksController(ITaskService taskService)
         {
-            _context = context;
-            _logger = logger;
+            _taskService = taskService;
         }
 
         // Helper method to extract the logged-in user's ID from the JWT token
@@ -28,18 +25,28 @@ namespace TaskManager.API.Controllers
             return int.TryParse(userIdClaim, out int userId) ? userId : 0;
         }
 
+        private string GetCurrentUserRole()
+        {
+            return User.FindFirst(ClaimTypes.Role)?.Value ?? "User";
+        }
+
+        // GET: api/Tasks/dashboard
+        [HttpGet("dashboard")]
+        public async Task<IActionResult> GetDashboard()
+        {
+            var userId = GetCurrentUserId();
+            var userRole = GetCurrentUserRole();
+            var dashboard = await _taskService.GetDashboardAsync(userId, userRole);
+            return Ok(dashboard);
+        }
+
         // GET: api/Tasks
         [HttpGet]
         public async Task<IActionResult> GetTasks()
         {
             var userId = GetCurrentUserId();
-            _logger.LogInformation("User ID {UserId} is fetching their task list.", userId);
-
-            // The Global Query Filter in DbContext automatically hides IsDeleted == true
-            var tasks = await _context.Tasks
-                .Where(t => t.AssignedUserId == userId)
-                .ToListAsync();
-
+            var userRole = GetCurrentUserRole();
+            var tasks = await _taskService.GetTasksAsync(userId, userRole);
             return Ok(tasks);
         }
 
@@ -48,68 +55,27 @@ namespace TaskManager.API.Controllers
         public async Task<IActionResult> GetTask(int id)
         {
             var userId = GetCurrentUserId();
-            var task = await _context.Tasks
-                .FirstOrDefaultAsync(t => t.Id == id && t.AssignedUserId == userId);
-
-            if (task == null)
-            {
-                _logger.LogWarning("User ID {UserId} attempted to access Task ID {TaskId} which does not exist or belongs to someone else.", userId, id);
-                return NotFound("Task not found.");
-            }
-
+            var userRole = GetCurrentUserRole();
+            var task = await _taskService.GetTaskByIdAsync(id, userId, userRole);
             return Ok(task);
         }
 
         // POST: api/Tasks
         [HttpPost]
-        public async Task<IActionResult> CreateTask([FromBody] TaskItem taskInput)
+        public async Task<IActionResult> CreateTask([FromBody] TaskCreateDto taskInput)
         {
             var userId = GetCurrentUserId();
-            
-            var task = new TaskItem
-            {
-                Title = taskInput.Title,
-                Description = taskInput.Description,
-                DueDate = taskInput.DueDate,
-                Priority = taskInput.Priority,
-                Status = taskInput.Status,
-                Category = taskInput.Category,
-                AssignedUserId = userId
-            };
-
-            _context.Tasks.Add(task);
-            await _context.SaveChangesAsync();
-
-            _logger.LogInformation("User ID {UserId} successfully created Task ID {TaskId}", userId, task.Id);
-
+            var task = await _taskService.CreateTaskAsync(taskInput, userId);
             return CreatedAtAction(nameof(GetTask), new { id = task.Id }, task);
         }
 
         // PUT: api/Tasks/5
         [HttpPut("{id}")]
-        public async Task<IActionResult> UpdateTask(int id, [FromBody] TaskItem taskUpdate)
+        public async Task<IActionResult> UpdateTask(int id, [FromBody] TaskUpdateDto taskUpdate)
         {
             var userId = GetCurrentUserId();
-            var task = await _context.Tasks
-                .FirstOrDefaultAsync(t => t.Id == id && t.AssignedUserId == userId);
-
-            if (task == null)
-            {
-                _logger.LogWarning("User ID {UserId} failed to update Task ID {TaskId} (Not Found or Access Denied).", userId, id);
-                return NotFound("Task not found or access denied.");
-            }
-
-            task.Title = taskUpdate.Title;
-            task.Description = taskUpdate.Description;
-            task.DueDate = taskUpdate.DueDate;
-            task.Priority = taskUpdate.Priority;
-            task.Status = taskUpdate.Status;
-            task.Category = taskUpdate.Category;
-
-            await _context.SaveChangesAsync();
-
-            _logger.LogInformation("User ID {UserId} successfully updated Task ID {TaskId}", userId, task.Id);
-
+            var userRole = GetCurrentUserRole();
+            var task = await _taskService.UpdateTaskAsync(id, taskUpdate, userId, userRole);
             return Ok(task);
         }
 
@@ -118,23 +84,9 @@ namespace TaskManager.API.Controllers
         public async Task<IActionResult> DeleteTask(int id)
         {
             var userId = GetCurrentUserId();
-            var task = await _context.Tasks
-                .FirstOrDefaultAsync(t => t.Id == id && t.AssignedUserId == userId);
-
-            if (task == null)
-            {
-                _logger.LogWarning("User ID {UserId} failed to delete Task ID {TaskId} (Not Found or Access Denied).", userId, id);
-                return NotFound("Task not found or access denied.");
-            }
-
-            // Virtual/Soft Delete implementation
-            task.IsDeleted = true;
-            
-            await _context.SaveChangesAsync();
-            
-            _logger.LogInformation("User ID {UserId} successfully soft-deleted Task ID {TaskId}", userId, task.Id);
-
-            return Ok(new { message = "Task deleted successfully." });
+            var userRole = GetCurrentUserRole();
+            var message = await _taskService.DeleteTaskAsync(id, userId, userRole);
+            return Ok(new { message });
         }
     }
 }

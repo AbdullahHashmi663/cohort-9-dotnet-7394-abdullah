@@ -4,6 +4,8 @@ using Microsoft.IdentityModel.Tokens;
 using Serilog;
 using System.Text;
 using TaskManager.API.Data;
+using TaskManager.API.Middleware;
+using TaskManager.API.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -12,13 +14,17 @@ builder.Host.UseSerilog((context, config) =>
     config.WriteTo.Console().WriteTo.File("Logs/app-log-.txt", rollingInterval: RollingInterval.Day));
 
 builder.Services.AddControllers();
-// Removed Swagger/OpenAPI to bypass the .NET 10 SDK bug
 
 // 2. Entity Framework Setup
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// 3. JWT Authentication Setup
+// 3. Register Application Services
+builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<ITaskService, TaskService>();
+builder.Services.AddScoped<IUserService, UserService>();
+
+// 4. JWT Authentication Setup
 var jwtKey = builder.Configuration["Jwt:Key"] ?? "YourSuperSecretFallbackKeyForDevelopment123!";
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
@@ -35,11 +41,29 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
     });
 
+// 5. CORS Setup — allow React dev server
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowReactApp", policy =>
+    {
+        policy.WithOrigins("http://localhost:5173", "http://localhost:3000")
+              .AllowAnyHeader()
+              .AllowAnyMethod()
+              .AllowCredentials();
+    });
+});
+
 var app = builder.Build();
+
+// Global Exception Handling Middleware (must be first in pipeline)
+app.UseMiddleware<ExceptionHandlingMiddleware>();
 
 app.UseHttpsRedirection();
 
-// Auth middleware must remain here
+// CORS must come before auth
+app.UseCors("AllowReactApp");
+
+// Auth middleware
 app.UseAuthentication();
 app.UseAuthorization();
 
