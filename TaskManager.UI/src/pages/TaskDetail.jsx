@@ -62,6 +62,15 @@ export default function TaskDetail() {
     }
   };
 
+  const handleRestore = async () => {
+    try {
+      const response = await API.post(`/tasks/${id}/restore`);
+      setTask(response.data);
+    } catch (err) {
+      setError('Failed to restore task.');
+    }
+  };
+
   const getPriorityClass = (priority) => {
     switch (priority) {
       case 'High': return 'badge-danger';
@@ -178,13 +187,23 @@ export default function TaskDetail() {
           </div>
 
           <div className="detail-actions">
-            <Link to={`/tasks/edit/${task.id}`} className="btn btn-primary">Edit Task</Link>
-            {task.isAdminAssigned && user?.role !== 'Admin' ? (
-              <span className="badge badge-warning" style={{ fontSize: '12px', padding: '10px 16px' }}>
-                🔒 Admin Assigned (Deletion Restricted)
-              </span>
+            {task.isDeleted ? (
+              user?.role === 'Admin' && (
+                <button onClick={handleRestore} className="btn btn-primary">
+                  🔄 Restore Task
+                </button>
+              )
             ) : (
-              <button onClick={handleDelete} className="btn btn-danger">Delete Task</button>
+              <>
+                <Link to={`/tasks/edit/${task.id}`} className="btn btn-primary">Edit Task</Link>
+                {task.isAdminAssigned && user?.role !== 'Admin' ? (
+                  <span className="badge badge-warning" style={{ fontSize: '12px', padding: '10px 16px' }}>
+                    🔒 Admin Assigned (Deletion Restricted)
+                  </span>
+                ) : (
+                  <button onClick={handleDelete} className="btn btn-danger">Delete Task</button>
+                )}
+              </>
             )}
           </div>
         </div>

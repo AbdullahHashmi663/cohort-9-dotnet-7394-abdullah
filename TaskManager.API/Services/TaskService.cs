@@ -26,8 +26,11 @@ namespace TaskManager.API.Services
 
             var query = _context.Tasks.Include(t => t.AssignedUser).Include(t => t.SubTasks).AsQueryable();
 
-            // Admin sees all tasks; regular user sees only their own
-            if (userRole != "Admin")
+            if (userRole == "Admin")
+            {
+                query = query.IgnoreQueryFilters();
+            }
+            else
             {
                 query = query.Where(t => t.AssignedUserId == userId);
             }
@@ -41,7 +44,11 @@ namespace TaskManager.API.Services
         {
             var query = _context.Tasks.Include(t => t.AssignedUser).Include(t => t.SubTasks).AsQueryable();
 
-            if (userRole != "Admin")
+            if (userRole == "Admin")
+            {
+                query = query.IgnoreQueryFilters();
+            }
+            else
             {
                 query = query.Where(t => t.AssignedUserId == userId);
             }
@@ -192,6 +199,37 @@ namespace TaskManager.API.Services
             return "Task deleted successfully.";
         }
 
+        public async Task<TaskResponseDto> RestoreTaskAsync(int taskId, int userId, string userRole)
+        {
+            if (userRole != "Admin")
+            {
+                throw new InvalidOperationException("Only Admin users can restore soft-deleted tasks.");
+            }
+
+            var task = await _context.Tasks.IgnoreQueryFilters()
+                .Include(t => t.AssignedUser)
+                .Include(t => t.SubTasks)
+                .FirstOrDefaultAsync(t => t.Id == taskId);
+
+            if (task == null)
+            {
+                throw new KeyNotFoundException("Task not found.");
+            }
+
+            task.IsDeleted = false;
+            await _context.SaveChangesAsync();
+
+            _logger.LogInformation("Admin User ID {UserId} restored Task ID {TaskId}", userId, task.Id);
+
+            var restoredDto = MapToResponseDto(task);
+            if (_hubContext != null)
+            {
+                await _hubContext.Clients.All.SendAsync("TaskUpdated", restoredDto);
+            }
+
+            return restoredDto;
+        }
+
         public async Task<DashboardDto> GetDashboardAsync(int userId, string userRole)
         {
             _logger.LogInformation("User ID {UserId} (Role: {Role}) is fetching dashboard data.", userId, userRole);
@@ -273,6 +311,7 @@ namespace TaskManager.API.Services
                 AssignedUserId = task.AssignedUserId,
                 AssignedUserName = task.AssignedUser?.Name ?? string.Empty,
                 IsAdminAssigned = task.IsAdminAssigned,
+                IsDeleted = task.IsDeleted,
                 SubTasks = task.SubTasks?.Select(st => new SubTaskDto
                 {
                     Id = st.Id,

@@ -38,16 +38,21 @@ export default function TaskList() {
   const applyFilters = () => {
     let result = [...tasks];
 
+    if (statusFilter === 'Deleted') {
+      result = result.filter(t => t.isDeleted);
+    } else {
+      result = result.filter(t => !t.isDeleted);
+      if (statusFilter !== 'All') {
+        result = result.filter(t => t.status === statusFilter);
+      }
+    }
+
     if (searchTerm) {
       result = result.filter(t =>
         t.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
         t.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
         t.category.toLowerCase().includes(searchTerm.toLowerCase())
       );
-    }
-
-    if (statusFilter !== 'All') {
-      result = result.filter(t => t.status === statusFilter);
     }
 
     if (priorityFilter !== 'All') {
@@ -62,30 +67,43 @@ export default function TaskList() {
 
     try {
       await API.delete(`/tasks/${id}`);
-      setTasks(tasks.filter(t => t.id !== id));
-      setSuccessMsg('Task deleted successfully.');
+      setSuccessMsg('Task deleted successfully!');
       setTimeout(() => setSuccessMsg(''), 3000);
+      fetchTasks();
     } catch (err) {
-      setError('Failed to delete task.');
+      setError(err.response?.data?.message || 'Failed to delete task.');
+    }
+  };
+
+  const handleRestore = async (id) => {
+    try {
+      await API.post(`/tasks/${id}/restore`);
+      setSuccessMsg('Task restored successfully!');
+      setTimeout(() => setSuccessMsg(''), 3000);
+      fetchTasks();
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to restore task.');
     }
   };
 
   const handleExport = async () => {
     try {
       const response = await API.get('/tasks/export', { responseType: 'blob' });
-      const blob = new Blob([response.data], { type: 'application/json' });
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'tasks.json';
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      window.URL.revokeObjectURL(url);
-      setSuccessMsg('Tasks exported successfully!');
-      setTimeout(() => setSuccessMsg(''), 3000);
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `tasks-export-${new Date().toISOString().slice(0,10)}.json`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
     } catch (err) {
       setError('Failed to export tasks.');
+    }
+  };
+
+  const handleImportClick = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
     }
   };
 
@@ -139,11 +157,11 @@ export default function TaskList() {
     <div className="page">
       <div className="page-header">
         <h1>Tasks</h1>
-        <div className="header-actions" style={{ display: 'flex', gap: '8px' }}>
+        <div style={{ display: 'flex', gap: '10px' }}>
           <button onClick={handleExport} className="btn btn-secondary">
             📥 Export
           </button>
-          <button onClick={() => fileInputRef.current?.click()} className="btn btn-secondary">
+          <button onClick={handleImportClick} className="btn btn-secondary">
             📤 Import
           </button>
           <input
@@ -175,6 +193,7 @@ export default function TaskList() {
           <option value="Pending">Pending</option>
           <option value="InProgress">In Progress</option>
           <option value="Completed">Completed</option>
+          {user?.role === 'Admin' && <option value="Deleted">🗑️ Deleted Tasks</option>}
         </select>
         <select value={priorityFilter} onChange={(e) => setPriorityFilter(e.target.value)} className="filter-select">
           <option value="All">All Priority</option>
@@ -192,14 +211,20 @@ export default function TaskList() {
       ) : (
         <div className="task-list">
           {filteredTasks.map((task) => (
-            <div key={task.id} className="task-card">
+            <div key={task.id} className="task-card" style={task.isDeleted ? { opacity: 0.75, borderColor: '#ef4444' } : {}}>
               <div className="task-card-header">
                 <h3>
                   <Link to={`/tasks/${task.id}`}>{task.title}</Link>
                 </h3>
                 <div className="task-badges">
-                  <span className={`badge ${getPriorityClass(task.priority)}`}>{task.priority}</span>
-                  <span className={`badge ${getStatusClass(task.status)}`}>{task.status}</span>
+                  {task.isDeleted ? (
+                    <span className="badge badge-danger">🗑️ Deleted</span>
+                  ) : (
+                    <>
+                      <span className={`badge ${getPriorityClass(task.priority)}`}>{task.priority}</span>
+                      <span className={`badge ${getStatusClass(task.status)}`}>{task.status}</span>
+                    </>
+                  )}
                 </div>
               </div>
               <p className="task-description">{task.description || 'No description'}</p>
@@ -214,11 +239,21 @@ export default function TaskList() {
                   )}
                 </div>
                 <div className="task-actions">
-                  <Link to={`/tasks/edit/${task.id}`} className="btn btn-sm btn-secondary">Edit</Link>
-                  {task.isAdminAssigned && user?.role !== 'Admin' ? (
-                    <span className="badge badge-warning" style={{ fontSize: '11px' }} title="Task assigned by Admin cannot be deleted by user">🔒 Admin Assigned</span>
+                  {task.isDeleted ? (
+                    user?.role === 'Admin' && (
+                      <button onClick={() => handleRestore(task.id)} className="btn btn-sm btn-primary">
+                        🔄 Restore
+                      </button>
+                    )
                   ) : (
-                    <button onClick={() => handleDelete(task.id)} className="btn btn-sm btn-danger">Delete</button>
+                    <>
+                      <Link to={`/tasks/edit/${task.id}`} className="btn btn-sm btn-secondary">Edit</Link>
+                      {task.isAdminAssigned && user?.role !== 'Admin' ? (
+                        <span className="badge badge-warning" style={{ fontSize: '11px' }} title="Task assigned by Admin cannot be deleted by user">🔒 Admin Assigned</span>
+                      ) : (
+                        <button onClick={() => handleDelete(task.id)} className="btn btn-sm btn-danger">Delete</button>
+                      )}
+                    </>
                   )}
                 </div>
               </div>

@@ -108,5 +108,15 @@ namespace TaskManager.API.Controllers
             var message = await _taskService.DeleteTaskAsync(id, userId, userRole);
             return Ok(new { message });
         }
+
+        // POST: api/Tasks/5/restore
+        [HttpPost("{id}/restore")]
+        public async Task<IActionResult> RestoreTask(int id)
+        {
+            var userId = GetCurrentUserId();
+            var userRole = GetCurrentUserRole();
+            var restoredTask = await _taskService.RestoreTaskAsync(id, userId, userRole);
+            return Ok(restoredTask);
+        }
     }
 }
