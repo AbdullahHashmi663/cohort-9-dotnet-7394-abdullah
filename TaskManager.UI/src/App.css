@@ -817,6 +817,8 @@ a:hover {
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  min-height: 65vh;
+  width: 100%;
   padding: 48px;
   gap: 16px;
   color: var(--text-secondary);
