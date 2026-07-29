@@ -387,7 +387,67 @@ a:hover {
 .auth-form {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 20px;
+}
+
+/* ===== Floating Label Auth Inputs ===== */
+.auth-form .inputBox {
+  position: relative;
+  width: 100%;
+}
+
+.auth-form .inputBox input {
+  width: 100%;
+  padding: 14px;
+  outline: none;
+  border: none;
+  color: var(--text-primary);
+  font-size: 14px;
+  font-family: var(--font);
+  background: var(--bg-input);
+  border-left: 2px solid var(--accent);
+  border-bottom: 2px solid var(--accent);
+  transition: all 0.3s ease;
+  border-bottom-left-radius: 8px;
+}
+
+.auth-form .inputBox span {
+  position: absolute;
+  left: 0;
+  top: 0;
+  margin-top: 2px;
+  margin-left: 6px;
+  padding: 10px;
+  pointer-events: none;
+  font-size: 12px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  transition: 0.4s ease;
+  letter-spacing: 2px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.auth-form .inputBox input:valid ~ span,
+.auth-form .inputBox input:focus ~ span,
+.auth-form .inputBox input:not(:placeholder-shown) ~ span {
+  transform: translateX(110px) translateY(-18px);
+  font-size: 0.75em;
+  padding: 4px 10px;
+  background: var(--accent);
+  letter-spacing: 0.15em;
+  color: #ffffff;
+  border-radius: 6px;
+  font-weight: 600;
+}
+
+.auth-form .inputBox input:valid,
+.auth-form .inputBox input:focus,
+.auth-form .inputBox input:not(:placeholder-shown) {
+  border: 2px solid var(--accent);
+  border-radius: 8px;
 }
 
 .auth-footer {

@@ -45,35 +45,31 @@ export default function Login() {
         {error && <div className="alert alert-error">{error}</div>}
 
         <form onSubmit={handleSubmit} className="auth-form">
-          <div className="form-group">
-            <label htmlFor="email" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <Mail size={14} /> Email
-            </label>
+          <div className="inputBox">
             <input
               id="email"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="you@example.com"
+              placeholder=" "
               required
             />
+            <span><Mail size={12} /> Email</span>
           </div>
 
-          <div className="form-group">
-            <label htmlFor="password" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <Lock size={14} /> Password
-            </label>
+          <div className="inputBox">
             <input
               id="password"
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••"
+              placeholder=" "
               required
             />
+            <span><Lock size={12} /> Password</span>
           </div>
 
-          <button type="submit" className="btn btn-primary btn-full" disabled={loading} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+          <button type="submit" className="btn btn-primary btn-full" disabled={loading} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', marginTop: '10px' }}>
             <LogIn size={16} /> {loading ? 'Signing in...' : 'Sign In'}
           </button>
         </form>
