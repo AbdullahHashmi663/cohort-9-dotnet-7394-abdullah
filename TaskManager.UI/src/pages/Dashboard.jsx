@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import API from '../api/axiosInstance';
 import { useAuth } from '../context/AuthContext';
+import Loader from '../components/Loader';
 
 export default function Dashboard() {
   const [stats, setStats] = useState(null);
@@ -27,10 +28,7 @@ export default function Dashboard() {
   if (loading) {
     return (
       <div className="page">
-        <div className="loading-screen">
-          <div className="spinner"></div>
-          <p>Loading dashboard...</p>
-        </div>
+        <Loader text="Loading dashboard..." />
       </div>
     );
   }

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import API from '../api/axiosInstance';
+import Loader from '../components/Loader';
 
 export default function TaskDetail() {
   const { id } = useParams();
@@ -84,10 +85,7 @@ export default function TaskDetail() {
   if (loading) {
     return (
       <div className="page">
-        <div className="loading-screen">
-          <div className="spinner"></div>
-          <p>Loading task details...</p>
-        </div>
+        <Loader text="Loading task details..." />
       </div>
     );
   }

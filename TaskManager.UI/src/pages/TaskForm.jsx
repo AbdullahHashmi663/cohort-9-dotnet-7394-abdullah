@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import API from '../api/axiosInstance';
+import Loader from '../components/Loader';
 
 export default function TaskForm() {
   const { id } = useParams();
@@ -89,10 +90,7 @@ export default function TaskForm() {
   if (fetching) {
     return (
       <div className="page">
-        <div className="loading-screen">
-          <div className="spinner"></div>
-          <p>Loading task...</p>
-        </div>
+        <Loader text="Loading task..." />
       </div>
     );
   }

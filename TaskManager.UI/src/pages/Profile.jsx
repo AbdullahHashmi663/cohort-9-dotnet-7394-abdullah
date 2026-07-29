@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import API from '../api/axiosInstance';
 import { useAuth } from '../context/AuthContext';
+import Loader from '../components/Loader';
 
 export default function Profile() {
   const [profile, setProfile] = useState(null);
@@ -33,10 +34,7 @@ export default function Profile() {
   if (loading) {
     return (
       <div className="page">
-        <div className="loading-screen">
-          <div className="spinner"></div>
-          <p>Loading profile...</p>
-        </div>
+        <Loader text="Loading profile..." />
       </div>
     );
   }

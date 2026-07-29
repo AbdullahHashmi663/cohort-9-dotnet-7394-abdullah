@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import API from '../api/axiosInstance';
+import Loader from '../components/Loader';
 
 export default function TaskList() {
   const [tasks, setTasks] = useState([]);
@@ -127,10 +128,7 @@ export default function TaskList() {
   if (loading) {
     return (
       <div className="page">
-        <div className="loading-screen">
-          <div className="spinner"></div>
-          <p>Loading tasks...</p>
-        </div>
+        <Loader text="Loading tasks..." />
       </div>
     );
   }
