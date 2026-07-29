@@ -1,6 +1,8 @@
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 using TaskManager.API.Data;
 using TaskManager.API.DTOs;
+using TaskManager.API.Hubs;
 using TaskManager.API.Models;
 
 namespace TaskManager.API.Services
@@ -9,11 +11,13 @@ namespace TaskManager.API.Services
     {
         private readonly AppDbContext _context;
         private readonly ILogger<TaskService> _logger;
+        private readonly IHubContext<TaskHub>? _hubContext;
 
-        public TaskService(AppDbContext context, ILogger<TaskService> logger)
+        public TaskService(AppDbContext context, ILogger<TaskService> logger, IHubContext<TaskHub>? hubContext = null)
         {
             _context = context;
             _logger = logger;
+            _hubContext = hubContext;
         }
 
         public async Task<IEnumerable<TaskResponseDto>> GetTasksAsync(int userId, string userRole)
@@ -74,7 +78,12 @@ namespace TaskManager.API.Services
 
             _logger.LogInformation("User ID {UserId} created Task ID {TaskId}: {Title}", userId, task.Id, task.Title);
 
-            return MapToResponseDto(task);
+            var responseDto = MapToResponseDto(task);
+            if (_hubContext != null)
+            {
+                await _hubContext.Clients.All.SendAsync("TaskCreated", responseDto);
+            }
+            return responseDto;
         }
 
         public async Task<TaskResponseDto> UpdateTaskAsync(int taskId, TaskUpdateDto dto, int userId, string userRole)
@@ -108,7 +117,12 @@ namespace TaskManager.API.Services
 
             _logger.LogInformation("User ID {UserId} updated Task ID {TaskId}", userId, task.Id);
 
-            return MapToResponseDto(task);
+            var updatedDto = MapToResponseDto(task);
+            if (_hubContext != null)
+            {
+                await _hubContext.Clients.All.SendAsync("TaskUpdated", updatedDto);
+            }
+            return updatedDto;
         }
 
         public async Task<string> DeleteTaskAsync(int taskId, int userId, string userRole)
@@ -133,6 +147,11 @@ namespace TaskManager.API.Services
             await _context.SaveChangesAsync();
 
             _logger.LogInformation("User ID {UserId} soft-deleted Task ID {TaskId}", userId, task.Id);
+
+            if (_hubContext != null)
+            {
+                await _hubContext.Clients.All.SendAsync("TaskDeleted", taskId);
+            }
 
             return "Task deleted successfully.";
         }

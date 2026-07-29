@@ -5,6 +5,7 @@ using Microsoft.OpenApi.Models;
 using Serilog;
 using System.Text;
 using TaskManager.API.Data;
+using TaskManager.API.Hubs;
 using TaskManager.API.Middleware;
 using TaskManager.API.Services;
 
@@ -57,6 +58,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<ITaskService, TaskService>();
 builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddSignalR();
 
 // 5. JWT Authentication Setup
 var jwtKey = builder.Configuration["Jwt:Key"] ?? "YourSuperSecretFallbackKeyForDevelopment123!";
@@ -110,5 +112,6 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+app.MapHub<TaskHub>("/hubs/task");
 
 app.Run();
