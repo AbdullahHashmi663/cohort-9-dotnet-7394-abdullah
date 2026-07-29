@@ -1,6 +1,6 @@
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { LayoutDashboard, CheckSquare, PlusCircle, User, LogOut, ShieldCheck } from 'lucide-react';
+import { LayoutDashboard, CheckSquare, PlusCircle, Users, User, LogOut, ShieldCheck } from 'lucide-react';
 
 export default function Layout() {
   const { user, logout } = useAuth();
@@ -34,6 +34,12 @@ export default function Layout() {
             <PlusCircle size={18} className="nav-icon" />
             New Task
           </NavLink>
+          {user?.role === 'Admin' && (
+            <NavLink to="/users" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
+              <Users size={18} className="nav-icon" />
+              Users
+            </NavLink>
+          )}
           <NavLink to="/profile" className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}>
             <User size={18} className="nav-icon" />
             Profile

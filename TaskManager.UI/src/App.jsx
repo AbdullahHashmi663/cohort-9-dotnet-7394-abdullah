@@ -10,6 +10,7 @@ import TaskList from './pages/TaskList';
 import TaskDetail from './pages/TaskDetail';
 import TaskForm from './pages/TaskForm';
 import Profile from './pages/Profile';
+import UserManagement from './pages/UserManagement';
 import './App.css';
 
 function App() {
@@ -35,6 +36,7 @@ function App() {
               <Route path="/tasks/new" element={<TaskForm />} />
               <Route path="/tasks/edit/:id" element={<TaskForm />} />
               <Route path="/tasks/:id" element={<TaskDetail />} />
+              <Route path="/users" element={<UserManagement />} />
               <Route path="/profile" element={<Profile />} />
             </Route>
 

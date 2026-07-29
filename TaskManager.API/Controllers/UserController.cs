@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
+using TaskManager.API.DTOs;
 using TaskManager.API.Services;
 
 namespace TaskManager.API.Controllers
@@ -32,6 +33,34 @@ namespace TaskManager.API.Controllers
         {
             var users = await _userService.GetAllUsersAsync();
             return Ok(users);
+        }
+
+        // POST: api/user
+        [HttpPost]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> CreateUser([FromBody] UserCreateAdminDto dto)
+        {
+            var user = await _userService.CreateUserAsync(dto);
+            return CreatedAtAction(nameof(GetAllUsers), new { id = user.Id }, user);
+        }
+
+        // PUT: api/user/{id}
+        [HttpPut("{id}")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> UpdateUser(int id, [FromBody] UserUpdateAdminDto dto)
+        {
+            var user = await _userService.UpdateUserAsync(id, dto);
+            return Ok(user);
+        }
+
+        // DELETE: api/user/{id}
+        [HttpDelete("{id}")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> DeleteUser(int id)
+        {
+            var currentUserId = GetCurrentUserId();
+            var message = await _userService.DeleteUserAsync(id, currentUserId);
+            return Ok(new { message });
         }
 
         private int GetCurrentUserId()
