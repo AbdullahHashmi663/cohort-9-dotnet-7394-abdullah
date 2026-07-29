@@ -114,4 +114,11 @@ app.UseAuthorization();
 app.MapControllers();
 app.MapHub<TaskHub>("/hubs/task");
 
+// Seed database on startup
+using (var scope = app.Services.CreateScope())
+{
+    var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    await DbInitializer.SeedAsync(dbContext);
+}
+
 app.Run();
