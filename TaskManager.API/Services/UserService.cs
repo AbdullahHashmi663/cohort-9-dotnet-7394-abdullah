@@ -19,6 +19,7 @@ namespace TaskManager.API.Services
         public async Task<UserProfileDto> GetProfileAsync(int userId)
         {
             var user = await _context.Users
+                .AsNoTracking()
                 .Include(u => u.Tasks)
                 .FirstOrDefaultAsync(u => u.Id == userId);
 
@@ -43,6 +44,7 @@ namespace TaskManager.API.Services
         public async Task<IEnumerable<UserOptionDto>> GetAllUsersAsync()
         {
             return await _context.Users
+                .AsNoTracking()
                 .Select(u => new UserOptionDto
                 {
                     Id = u.Id,

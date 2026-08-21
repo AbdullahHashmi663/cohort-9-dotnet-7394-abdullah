@@ -24,7 +24,7 @@ namespace TaskManager.API.Services
         {
             _logger.LogInformation("User ID {UserId} (Role: {Role}) is fetching tasks.", userId, userRole);
 
-            var query = _context.Tasks.Include(t => t.AssignedUser).Include(t => t.SubTasks).AsQueryable();
+            var query = _context.Tasks.AsNoTracking().Include(t => t.AssignedUser).Include(t => t.SubTasks).AsQueryable();
 
             if (userRole == "Admin")
             {
@@ -42,7 +42,7 @@ namespace TaskManager.API.Services
 
         public async Task<TaskResponseDto> GetTaskByIdAsync(int taskId, int userId, string userRole)
         {
-            var query = _context.Tasks.Include(t => t.AssignedUser).Include(t => t.SubTasks).AsQueryable();
+            var query = _context.Tasks.AsNoTracking().Include(t => t.AssignedUser).Include(t => t.SubTasks).AsQueryable();
 
             if (userRole == "Admin")
             {
@@ -234,17 +234,21 @@ namespace TaskManager.API.Services
         {
             _logger.LogInformation("User ID {UserId} (Role: {Role}) is fetching dashboard data.", userId, userRole);
 
-            var query = _context.Tasks.AsQueryable();
+            var query = _context.Tasks.AsNoTracking().AsQueryable();
 
-            // Admin sees all task counts; regular user sees only their own
             if (userRole != "Admin")
             {
                 query = query.Where(t => t.AssignedUserId == userId);
             }
 
-            var pending = await query.CountAsync(t => t.Status == "Pending");
-            var inProgress = await query.CountAsync(t => t.Status == "InProgress");
-            var completed = await query.CountAsync(t => t.Status == "Completed");
+            var statusCounts = await query
+                .GroupBy(t => t.Status)
+                .Select(g => new { Status = g.Key, Count = g.Count() })
+                .ToDictionaryAsync(g => g.Status, g => g.Count);
+
+            int pending = statusCounts.GetValueOrDefault("Pending", 0);
+            int inProgress = statusCounts.GetValueOrDefault("InProgress", 0);
+            int completed = statusCounts.GetValueOrDefault("Completed", 0);
 
             return new DashboardDto
             {
@@ -273,12 +277,9 @@ namespace TaskManager.API.Services
                 return 0;
             }
 
-            int count = 0;
-            foreach (var dto in dtos)
-            {
-                if (string.IsNullOrWhiteSpace(dto.Title)) continue;
-
-                var task = new TaskItem
+            var validTasks = dtos
+                .Where(dto => !string.IsNullOrWhiteSpace(dto.Title))
+                .Select(dto => new TaskItem
                 {
                     Title = dto.Title,
                     Description = dto.Description ?? string.Empty,
@@ -287,14 +288,17 @@ namespace TaskManager.API.Services
                     Status = string.IsNullOrWhiteSpace(dto.Status) ? "Pending" : dto.Status,
                     Category = dto.Category ?? string.Empty,
                     AssignedUserId = userId
-                };
-                _context.Tasks.Add(task);
-                count++;
+                })
+                .ToList();
+
+            if (validTasks.Count > 0)
+            {
+                await _context.Tasks.AddRangeAsync(validTasks);
+                await _context.SaveChangesAsync();
             }
 
-            await _context.SaveChangesAsync();
-            _logger.LogInformation("User ID {UserId} imported {Count} tasks.", userId, count);
-            return count;
+            _logger.LogInformation("User ID {UserId} imported {Count} tasks.", userId, validTasks.Count);
+            return validTasks.Count;
         }
 
         private static TaskResponseDto MapToResponseDto(TaskItem task)

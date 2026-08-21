@@ -22,8 +22,7 @@ namespace TaskManager.API.Controllers
         [HttpGet("profile")]
         public async Task<IActionResult> GetProfile()
         {
-            var userId = GetCurrentUserId();
-            var profile = await _userService.GetProfileAsync(userId);
+            var profile = await _userService.GetProfileAsync(User.GetUserId());
             return Ok(profile);
         }
 
@@ -58,15 +57,8 @@ namespace TaskManager.API.Controllers
         [Authorize(Roles = "Admin")]
         public async Task<IActionResult> DeleteUser(int id)
         {
-            var currentUserId = GetCurrentUserId();
-            var message = await _userService.DeleteUserAsync(id, currentUserId);
+            var message = await _userService.DeleteUserAsync(id, User.GetUserId());
             return Ok(new { message });
-        }
-
-        private int GetCurrentUserId()
-        {
-            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            return int.TryParse(userIdClaim, out int userId) ? userId : 0;
         }
     }
 }

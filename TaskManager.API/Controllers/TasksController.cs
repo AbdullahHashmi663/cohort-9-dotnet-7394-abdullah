@@ -18,25 +18,11 @@ namespace TaskManager.API.Controllers
             _taskService = taskService;
         }
 
-        // Helper method to extract the logged-in user's ID from the JWT token
-        private int GetCurrentUserId()
-        {
-            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            return int.TryParse(userIdClaim, out int userId) ? userId : 0;
-        }
-
-        private string GetCurrentUserRole()
-        {
-            return User.FindFirst(ClaimTypes.Role)?.Value ?? "User";
-        }
-
         // GET: api/Tasks/dashboard
         [HttpGet("dashboard")]
         public async Task<IActionResult> GetDashboard()
         {
-            var userId = GetCurrentUserId();
-            var userRole = GetCurrentUserRole();
-            var dashboard = await _taskService.GetDashboardAsync(userId, userRole);
+            var dashboard = await _taskService.GetDashboardAsync(User.GetUserId(), User.GetUserRole());
             return Ok(dashboard);
         }
 
@@ -44,9 +30,7 @@ namespace TaskManager.API.Controllers
         [HttpGet("export")]
         public async Task<IActionResult> ExportTasks()
         {
-            var userId = GetCurrentUserId();
-            var userRole = GetCurrentUserRole();
-            var bytes = await _taskService.ExportTasksAsync(userId, userRole);
+            var bytes = await _taskService.ExportTasksAsync(User.GetUserId(), User.GetUserRole());
             return File(bytes, "application/json", "tasks.json");
         }
 
@@ -54,8 +38,7 @@ namespace TaskManager.API.Controllers
         [HttpPost("import")]
         public async Task<IActionResult> ImportTasks([FromBody] List<TaskCreateDto> taskInputs)
         {
-            var userId = GetCurrentUserId();
-            var count = await _taskService.ImportTasksAsync(taskInputs, userId);
+            var count = await _taskService.ImportTasksAsync(taskInputs, User.GetUserId());
             return Ok(new { message = $"{count} tasks imported successfully.", importedCount = count });
         }
 
@@ -63,9 +46,7 @@ namespace TaskManager.API.Controllers
         [HttpGet]
         public async Task<IActionResult> GetTasks()
         {
-            var userId = GetCurrentUserId();
-            var userRole = GetCurrentUserRole();
-            var tasks = await _taskService.GetTasksAsync(userId, userRole);
+            var tasks = await _taskService.GetTasksAsync(User.GetUserId(), User.GetUserRole());
             return Ok(tasks);
         }
 
@@ -73,9 +54,7 @@ namespace TaskManager.API.Controllers
         [HttpGet("{id}")]
         public async Task<IActionResult> GetTask(int id)
         {
-            var userId = GetCurrentUserId();
-            var userRole = GetCurrentUserRole();
-            var task = await _taskService.GetTaskByIdAsync(id, userId, userRole);
+            var task = await _taskService.GetTaskByIdAsync(id, User.GetUserId(), User.GetUserRole());
             return Ok(task);
         }
 
@@ -83,9 +62,7 @@ namespace TaskManager.API.Controllers
         [HttpPost]
         public async Task<IActionResult> CreateTask([FromBody] TaskCreateDto taskInput)
         {
-            var userId = GetCurrentUserId();
-            var userRole = GetCurrentUserRole();
-            var task = await _taskService.CreateTaskAsync(taskInput, userId, userRole);
+            var task = await _taskService.CreateTaskAsync(taskInput, User.GetUserId(), User.GetUserRole());
             return CreatedAtAction(nameof(GetTask), new { id = task.Id }, task);
         }
 
@@ -93,9 +70,7 @@ namespace TaskManager.API.Controllers
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateTask(int id, [FromBody] TaskUpdateDto taskUpdate)
         {
-            var userId = GetCurrentUserId();
-            var userRole = GetCurrentUserRole();
-            var task = await _taskService.UpdateTaskAsync(id, taskUpdate, userId, userRole);
+            var task = await _taskService.UpdateTaskAsync(id, taskUpdate, User.GetUserId(), User.GetUserRole());
             return Ok(task);
         }
 
@@ -103,9 +78,7 @@ namespace TaskManager.API.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteTask(int id)
         {
-            var userId = GetCurrentUserId();
-            var userRole = GetCurrentUserRole();
-            var message = await _taskService.DeleteTaskAsync(id, userId, userRole);
+            var message = await _taskService.DeleteTaskAsync(id, User.GetUserId(), User.GetUserRole());
             return Ok(new { message });
         }
 
@@ -113,9 +86,7 @@ namespace TaskManager.API.Controllers
         [HttpPost("{id}/restore")]
         public async Task<IActionResult> RestoreTask(int id)
         {
-            var userId = GetCurrentUserId();
-            var userRole = GetCurrentUserRole();
-            var restoredTask = await _taskService.RestoreTaskAsync(id, userId, userRole);
+            var restoredTask = await _taskService.RestoreTaskAsync(id, User.GetUserId(), User.GetUserRole());
             return Ok(restoredTask);
         }
     }

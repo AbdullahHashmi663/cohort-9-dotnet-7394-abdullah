@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import API from '../api/axiosInstance';
 import Loader from '../components/Loader';
@@ -8,7 +8,6 @@ import { Download, Upload, Plus, Search, Folder, Calendar, User, Lock, Trash2, R
 export default function TaskList() {
   const { user } = useAuth();
   const [tasks, setTasks] = useState([]);
-  const [filteredTasks, setFilteredTasks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
@@ -16,14 +15,6 @@ export default function TaskList() {
   const [statusFilter, setStatusFilter] = useState('All');
   const [priorityFilter, setPriorityFilter] = useState('All');
   const fileInputRef = useRef(null);
-
-  useEffect(() => {
-    fetchTasks();
-  }, []);
-
-  useEffect(() => {
-    applyFilters();
-  }, [tasks, searchTerm, statusFilter, priorityFilter]);
 
   const fetchTasks = async () => {
     try {
@@ -36,7 +27,11 @@ export default function TaskList() {
     }
   };
 
-  const applyFilters = () => {
+  useEffect(() => {
+    fetchTasks();
+  }, []);
+
+  const filteredTasks = useMemo(() => {
     let result = [...tasks];
 
     if (statusFilter === 'Deleted') {
@@ -49,10 +44,11 @@ export default function TaskList() {
     }
 
     if (searchTerm) {
+      const term = searchTerm.toLowerCase();
       result = result.filter(t =>
-        t.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        t.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        t.category.toLowerCase().includes(searchTerm.toLowerCase())
+        (t.title && t.title.toLowerCase().includes(term)) ||
+        (t.description && t.description.toLowerCase().includes(term)) ||
+        (t.category && t.category.toLowerCase().includes(term))
       );
     }
 
@@ -60,8 +56,8 @@ export default function TaskList() {
       result = result.filter(t => t.priority === priorityFilter);
     }
 
-    setFilteredTasks(result);
-  };
+    return result;
+  }, [tasks, searchTerm, statusFilter, priorityFilter]);
 
   const handleDelete = async (id) => {
     if (!window.confirm('Are you sure you want to delete this task?')) return;

@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext, useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import * as signalR from '@microsoft/signalr';
 import { useAuth } from './AuthContext';
 
@@ -8,6 +8,17 @@ export function SignalRProvider({ children }) {
   const { isAuthenticated } = useAuth();
   const [connection, setConnection] = useState(null);
   const [notification, setNotification] = useState(null);
+  const timerRef = useRef(null);
+
+  const showNotification = useCallback((msg) => {
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+    }
+    setNotification(msg);
+    timerRef.current = setTimeout(() => {
+      setNotification(null);
+    }, 4000);
+  }, []);
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -43,19 +54,17 @@ export function SignalRProvider({ children }) {
       .catch((err) => console.log('SignalR Connection Error: ', err));
 
     return () => {
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+      }
       newConnection.stop();
     };
-  }, [isAuthenticated]);
+  }, [isAuthenticated, showNotification]);
 
-  const showNotification = (msg) => {
-    setNotification(msg);
-    setTimeout(() => {
-      setNotification(null);
-    }, 4000);
-  };
+  const value = useMemo(() => ({ connection, notification }), [connection, notification]);
 
   return (
-    <SignalRContext.Provider value={{ connection, notification }}>
+    <SignalRContext.Provider value={value}>
       {children}
       {notification && (
         <div className="toast-notification">
