@@ -19,11 +19,17 @@ export default function Login() {
 
     try {
       const response = await API.post('/auth/login', { email, password });
+      if (!response.data || !response.data.token) {
+        throw new Error('Invalid login response received from server.');
+      }
       const { token, name, role } = response.data;
       login(token, { name, email, role });
       navigate('/dashboard');
     } catch (err) {
-      setError(err.response?.data?.message || err.response?.data || 'Login failed. Please try again.');
+      const msg = typeof err.response?.data === 'string'
+        ? err.response.data
+        : (err.response?.data?.message || err.message || 'Login failed. Please try again.');
+      setError(msg);
     } finally {
       setLoading(false);
     }
@@ -54,7 +60,7 @@ export default function Login() {
               placeholder=" "
               required
             />
-            <span><Mail size={12} /> Email</span>
+            <label htmlFor="email"><span><Mail size={12} /> Email</span></label>
           </div>
 
           <div className="inputBox">
@@ -66,7 +72,7 @@ export default function Login() {
               placeholder=" "
               required
             />
-            <span><Lock size={12} /> Password</span>
+            <label htmlFor="password"><span><Lock size={12} /> Password</span></label>
           </div>
 
           <button type="submit" className="btn btn-primary btn-full" disabled={loading} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', marginTop: '10px' }}>

@@ -30,31 +30,39 @@ export default function TaskForm() {
 
   useEffect(() => {
     const initData = async () => {
-      try {
-        if (isAdmin) {
+      if (isAdmin) {
+        try {
           const usersRes = await API.get('/user/all');
-          setUsersList(usersRes.data);
+          if (Array.isArray(usersRes.data)) {
+            setUsersList(usersRes.data);
+          }
+        } catch {
+          console.log('Failed to load user list for task assignment.');
         }
+      }
 
-        if (isEdit) {
+      if (isEdit) {
+        try {
           const taskRes = await API.get(`/tasks/${id}`);
           const task = taskRes.data;
-          setFormData({
-            title: task.title,
-            description: task.description || '',
-            dueDate: task.dueDate ? task.dueDate.split('T')[0] : '',
-            priority: task.priority,
-            status: task.status,
-            category: task.category || '',
-            assignedUserId: task.assignedUserId || '',
-          });
-          setSubtasks(task.subTasks || []);
+          if (task) {
+            setFormData({
+              title: task.title,
+              description: task.description || '',
+              dueDate: task.dueDate ? task.dueDate.split('T')[0] : '',
+              priority: task.priority,
+              status: task.status,
+              category: task.category || '',
+              assignedUserId: task.assignedUserId || '',
+            });
+            setSubtasks(task.subTasks || []);
+          }
+        } catch (err) {
+          setError('Failed to load task details.');
         }
-      } catch (err) {
-        setError('Failed to initialize task form.');
-      } finally {
-        setFetching(false);
       }
+
+      setFetching(false);
     };
 
     initData();

@@ -30,10 +30,11 @@ export default function UserManagement() {
 
   useEffect(() => {
     if (searchTerm) {
+      const term = searchTerm.toLowerCase();
       setFilteredUsers(
         users.filter(u =>
-          u.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          u.email.toLowerCase().includes(searchTerm.toLowerCase())
+          (u?.name ?? '').toLowerCase().includes(term) ||
+          (u?.email ?? '').toLowerCase().includes(term)
         )
       );
     } else {
@@ -44,7 +45,11 @@ export default function UserManagement() {
   const fetchUsers = async () => {
     try {
       const response = await API.get('/user/all');
-      setUsers(response.data);
+      if (Array.isArray(response.data)) {
+        setUsers(response.data);
+      } else {
+        setError('Invalid user list response received.');
+      }
     } catch (err) {
       setError('Failed to fetch user list.');
     } finally {
@@ -147,8 +152,10 @@ export default function UserManagement() {
         <div style={{ position: 'relative', flex: 1 }}>
           <Search size={16} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }} />
           <input
+            id="user-search"
             type="text"
             className="search-input"
+            aria-label="Search users by name or email"
             style={{ paddingLeft: '36px', width: '100%' }}
             placeholder="Search users by name or email..."
             value={searchTerm}
@@ -226,7 +233,7 @@ export default function UserManagement() {
               <h2 style={{ fontSize: '20px', fontWeight: '700' }}>
                 {editingUser ? `Edit User: ${editingUser.name}` : 'Add New User'}
               </h2>
-              <button onClick={handleCloseModal} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}>
+              <button onClick={handleCloseModal} aria-label="Close modal" style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}>
                 <X size={20} />
               </button>
             </div>
@@ -234,35 +241,38 @@ export default function UserManagement() {
             <form onSubmit={handleSubmit} className="auth-form">
               <div className="inputBox">
                 <input
+                  id="modal-name"
                   type="text"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   placeholder=" "
                   required
                 />
-                <span><UserIcon size={12} /> Full Name</span>
+                <label htmlFor="modal-name"><span><UserIcon size={12} /> Full Name</span></label>
               </div>
 
               <div className="inputBox">
                 <input
+                  id="modal-email"
                   type="email"
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                   placeholder=" "
                   required
                 />
-                <span>Email</span>
+                <label htmlFor="modal-email"><span>Email</span></label>
               </div>
 
               <div className="inputBox">
                 <input
+                  id="modal-password"
                   type="password"
                   value={formData.password}
                   onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                   placeholder=" "
                   required={!editingUser}
                 />
-                <span>{editingUser ? 'New Password (Optional)' : 'Password'}</span>
+                <label htmlFor="modal-password"><span>{editingUser ? 'New Password (Optional)' : 'Password'}</span></label>
               </div>
 
               <div className="form-group" style={{ marginTop: '10px' }}>

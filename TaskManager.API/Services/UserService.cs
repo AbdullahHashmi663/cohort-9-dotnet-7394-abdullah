@@ -57,6 +57,11 @@ namespace TaskManager.API.Services
 
         public async Task<UserOptionDto> CreateUserAsync(UserCreateAdminDto dto)
         {
+            if (dto.Role != "Admin" && dto.Role != "User")
+            {
+                throw new ArgumentException("Invalid role specified. Role must be 'Admin' or 'User'.");
+            }
+
             var existing = await _context.Users.FirstOrDefaultAsync(u => u.Email.ToLower() == dto.Email.ToLower());
             if (existing != null)
             {
@@ -69,13 +74,13 @@ namespace TaskManager.API.Services
                 Name = dto.Name,
                 Email = dto.Email,
                 PasswordHash = passwordHash,
-                Role = string.IsNullOrWhiteSpace(dto.Role) ? "User" : dto.Role
+                Role = dto.Role
             };
 
             _context.Users.Add(user);
             await _context.SaveChangesAsync();
 
-            _logger.LogInformation("Admin created User ID {UserId} ({Email}, Role: {Role}).", user.Id, user.Email, user.Role);
+            _logger.LogInformation("Admin created User ID {UserId} with Role {Role}.", user.Id, user.Role);
 
             return new UserOptionDto
             {
@@ -88,6 +93,11 @@ namespace TaskManager.API.Services
 
         public async Task<UserOptionDto> UpdateUserAsync(int userId, UserUpdateAdminDto dto)
         {
+            if (dto.Role != "Admin" && dto.Role != "User")
+            {
+                throw new ArgumentException("Invalid role specified. Role must be 'Admin' or 'User'.");
+            }
+
             var user = await _context.Users.FindAsync(userId);
             if (user == null)
             {
@@ -102,7 +112,7 @@ namespace TaskManager.API.Services
 
             user.Name = dto.Name;
             user.Email = dto.Email;
-            user.Role = string.IsNullOrWhiteSpace(dto.Role) ? "User" : dto.Role;
+            user.Role = dto.Role;
 
             if (!string.IsNullOrWhiteSpace(dto.Password))
             {
@@ -111,7 +121,7 @@ namespace TaskManager.API.Services
 
             await _context.SaveChangesAsync();
 
-            _logger.LogInformation("Admin updated User ID {UserId} ({Email}, Role: {Role}).", user.Id, user.Email, user.Role);
+            _logger.LogInformation("Admin updated User ID {UserId} with Role {Role}.", user.Id, user.Role);
 
             return new UserOptionDto
             {

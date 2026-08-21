@@ -36,7 +36,7 @@ function App() {
               <Route path="/tasks/new" element={<TaskForm />} />
               <Route path="/tasks/edit/:id" element={<TaskForm />} />
               <Route path="/tasks/:id" element={<TaskDetail />} />
-              <Route path="/users" element={<UserManagement />} />
+              <Route path="/users" element={<ProtectedRoute requiredRole="Admin"><UserManagement /></ProtectedRoute>} />
               <Route path="/profile" element={<Profile />} />
             </Route>
 

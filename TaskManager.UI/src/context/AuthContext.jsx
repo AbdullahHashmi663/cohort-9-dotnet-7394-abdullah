@@ -24,6 +24,8 @@ export function AuthProvider({ children }) {
 
     // Handle global 401 unauthorized event
     const handleUnauthorized = () => {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
       setToken(null);
       setUser(null);
     };

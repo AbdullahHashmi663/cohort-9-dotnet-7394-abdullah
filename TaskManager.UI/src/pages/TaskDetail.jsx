@@ -12,6 +12,7 @@ export default function TaskDetail() {
   const [task, setTask] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [subtaskUpdating, setSubtaskUpdating] = useState(false);
 
   useEffect(() => {
     fetchTask();
@@ -20,7 +21,11 @@ export default function TaskDetail() {
   const fetchTask = async () => {
     try {
       const response = await API.get(`/tasks/${id}`);
-      setTask(response.data);
+      if (response.data && typeof response.data === 'object') {
+        setTask(response.data);
+      } else {
+        setError('Invalid task data received.');
+      }
     } catch (err) {
       setError('Task not found or access denied.');
     } finally {
@@ -29,7 +34,9 @@ export default function TaskDetail() {
   };
 
   const handleToggleSubtask = async (subtaskId) => {
-    if (!task) return;
+    if (!task || subtaskUpdating) return;
+    setSubtaskUpdating(true);
+
     const updatedSubtasks = task.subTasks.map(st =>
       st.id === subtaskId ? { ...st, isCompleted: !st.isCompleted } : st
     );
@@ -46,9 +53,13 @@ export default function TaskDetail() {
 
     try {
       const response = await API.put(`/tasks/${id}`, payload);
-      setTask(response.data);
+      if (response.data && typeof response.data === 'object') {
+        setTask(response.data);
+      }
     } catch (err) {
       setError('Failed to update subtask status.');
+    } finally {
+      setSubtaskUpdating(false);
     }
   };
 
@@ -185,9 +196,10 @@ export default function TaskDetail() {
                     <label key={st.id} style={{ display: 'flex', alignItems: 'center', gap: '12px', background: 'var(--bg-input)', padding: '10px 14px', borderRadius: 'var(--radius-sm)', cursor: 'pointer' }}>
                       <input
                         type="checkbox"
+                        disabled={subtaskUpdating}
                         checked={st.isCompleted}
                         onChange={() => handleToggleSubtask(st.id)}
-                        style={{ width: '18px', height: '18px', cursor: 'pointer' }}
+                        style={{ width: '18px', height: '18px', cursor: subtaskUpdating ? 'not-allowed' : 'pointer' }}
                       />
                       <span style={{ textDecoration: st.isCompleted ? 'line-through' : 'none', opacity: st.isCompleted ? 0.6 : 1, fontSize: '14px' }}>
                         {st.title}

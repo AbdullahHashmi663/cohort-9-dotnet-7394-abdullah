@@ -19,9 +19,13 @@ export default function TaskList() {
   const fetchTasks = async () => {
     try {
       const response = await API.get('/tasks');
-      setTasks(response.data);
+      if (Array.isArray(response.data)) {
+        setTasks(response.data);
+      } else {
+        setError('Invalid task list response received.');
+      }
     } catch (err) {
-      setError('Failed to load tasks.');
+      setError('Failed to fetch tasks.');
     } finally {
       setLoading(false);
     }

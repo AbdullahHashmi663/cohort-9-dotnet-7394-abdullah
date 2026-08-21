@@ -45,6 +45,12 @@ namespace TaskManager.API.Middleware
             _logger.LogError(exception, "An unhandled exception occurred. Status Code: {StatusCode}, Message: {Message}",
                 (int)statusCode, exception.Message);
 
+            if (context.Response.HasStarted)
+            {
+                _logger.LogWarning("The response has already started. The error response cannot be written.");
+                return;
+            }
+
             context.Response.ContentType = "application/json";
             context.Response.StatusCode = (int)statusCode;
 

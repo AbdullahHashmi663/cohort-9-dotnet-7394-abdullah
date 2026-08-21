@@ -38,6 +38,14 @@ namespace TaskManager.API.Controllers
         [HttpPost("import")]
         public async Task<IActionResult> ImportTasks([FromBody] List<TaskCreateDto> taskInputs)
         {
+            if (taskInputs == null || taskInputs.Count == 0)
+            {
+                return BadRequest(new { message = "Task import payload cannot be empty." });
+            }
+            if (taskInputs.Count > 100)
+            {
+                return BadRequest(new { message = "Task import batch size cannot exceed 100 tasks per request." });
+            }
             var count = await _taskService.ImportTasksAsync(taskInputs, User.GetUserId());
             return Ok(new { message = $"{count} tasks imported successfully.", importedCount = count });
         }
@@ -84,6 +92,7 @@ namespace TaskManager.API.Controllers
 
         // POST: api/Tasks/5/restore
         [HttpPost("{id}/restore")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> RestoreTask(int id)
         {
             var restoredTask = await _taskService.RestoreTaskAsync(id, User.GetUserId(), User.GetUserRole());

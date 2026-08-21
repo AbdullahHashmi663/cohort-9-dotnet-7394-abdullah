@@ -66,9 +66,16 @@ namespace TaskManager.API.Services
 
         public async Task<TaskResponseDto> CreateTaskAsync(TaskCreateDto dto, int userId, string userRole = "User")
         {
-            int targetUserId = (userRole == "Admin" && dto.AssignedUserId.HasValue && dto.AssignedUserId.Value > 0)
-                ? dto.AssignedUserId.Value
-                : userId;
+            int targetUserId = userId;
+            if (userRole == "Admin" && dto.AssignedUserId.HasValue && dto.AssignedUserId.Value > 0)
+            {
+                var userExists = await _context.Users.AnyAsync(u => u.Id == dto.AssignedUserId.Value);
+                if (!userExists)
+                {
+                    throw new KeyNotFoundException($"Assigned user ID {dto.AssignedUserId.Value} not found.");
+                }
+                targetUserId = dto.AssignedUserId.Value;
+            }
 
             bool isAdminAssigned = (userRole == "Admin" && dto.AssignedUserId.HasValue && dto.AssignedUserId.Value > 0 && dto.AssignedUserId.Value != userId);
 
@@ -82,7 +89,7 @@ namespace TaskManager.API.Services
                 Category = dto.Category,
                 AssignedUserId = targetUserId,
                 IsAdminAssigned = isAdminAssigned,
-                SubTasks = dto.SubTasks.Select(st => new SubTask
+                SubTasks = (dto.SubTasks ?? Enumerable.Empty<SubTaskDto>()).Select(st => new SubTask
                 {
                     Title = st.Title,
                     IsCompleted = st.IsCompleted
@@ -101,7 +108,7 @@ namespace TaskManager.API.Services
             var responseDto = MapToResponseDto(task);
             if (_hubContext != null)
             {
-                await _hubContext.Clients.All.SendAsync("TaskCreated", responseDto);
+                await _hubContext.Clients.Group($"User_{task.AssignedUserId}").SendAsync("TaskCreated", responseDto);
             }
             return responseDto;
         }
@@ -132,16 +139,18 @@ namespace TaskManager.API.Services
 
             if (userRole == "Admin" && dto.AssignedUserId.HasValue && dto.AssignedUserId.Value > 0)
             {
-                task.AssignedUserId = dto.AssignedUserId.Value;
-                if (dto.AssignedUserId.Value != userId)
+                var userExists = await _context.Users.AnyAsync(u => u.Id == dto.AssignedUserId.Value);
+                if (!userExists)
                 {
-                    task.IsAdminAssigned = true;
+                    throw new KeyNotFoundException($"Assigned user ID {dto.AssignedUserId.Value} not found.");
                 }
+                task.AssignedUserId = dto.AssignedUserId.Value;
+                task.IsAdminAssigned = dto.AssignedUserId.Value != userId;
             }
 
             // Replace existing subtasks with new ones
             _context.SubTasks.RemoveRange(task.SubTasks);
-            task.SubTasks = dto.SubTasks.Select(st => new SubTask
+            task.SubTasks = (dto.SubTasks ?? Enumerable.Empty<SubTaskDto>()).Select(st => new SubTask
             {
                 Title = st.Title,
                 IsCompleted = st.IsCompleted
@@ -157,7 +166,7 @@ namespace TaskManager.API.Services
             var updatedDto = MapToResponseDto(task);
             if (_hubContext != null)
             {
-                await _hubContext.Clients.All.SendAsync("TaskUpdated", updatedDto);
+                await _hubContext.Clients.Group($"User_{task.AssignedUserId}").SendAsync("TaskUpdated", updatedDto);
             }
             return updatedDto;
         }
@@ -193,7 +202,7 @@ namespace TaskManager.API.Services
 
             if (_hubContext != null)
             {
-                await _hubContext.Clients.All.SendAsync("TaskDeleted", taskId);
+                await _hubContext.Clients.Group($"User_{task.AssignedUserId}").SendAsync("TaskDeleted", taskId);
             }
 
             return "Task deleted successfully.";
@@ -224,7 +233,7 @@ namespace TaskManager.API.Services
             var restoredDto = MapToResponseDto(task);
             if (_hubContext != null)
             {
-                await _hubContext.Clients.All.SendAsync("TaskUpdated", restoredDto);
+                await _hubContext.Clients.Group($"User_{task.AssignedUserId}").SendAsync("TaskUpdated", restoredDto);
             }
 
             return restoredDto;
@@ -241,41 +250,56 @@ namespace TaskManager.API.Services
                 query = query.Where(t => t.AssignedUserId == userId);
             }
 
-            var statusCounts = await query
-                .GroupBy(t => t.Status)
-                .Select(g => new { Status = g.Key, Count = g.Count() })
-                .ToDictionaryAsync(g => g.Status, g => g.Count);
+            var tasks = await query.ToListAsync();
 
-            int pending = statusCounts.GetValueOrDefault("Pending", 0);
-            int inProgress = statusCounts.GetValueOrDefault("InProgress", 0);
-            int completed = statusCounts.GetValueOrDefault("Completed", 0);
+            var totalTasks = tasks.Count;
+            var pendingTasks = tasks.Count(t => t.Status == "Pending");
+            var inProgressTasks = tasks.Count(t => t.Status == "InProgress");
+            var completedTasks = tasks.Count(t => t.Status == "Completed");
+
+            var highPriorityTasks = tasks.Count(t => t.Priority == "High");
+            var mediumPriorityTasks = tasks.Count(t => t.Priority == "Medium");
+            var lowPriorityTasks = tasks.Count(t => t.Priority == "Low");
+
+            var recentTasks = tasks
+                .OrderByDescending(t => t.Id)
+                .Take(5)
+                .Select(MapToResponseDto)
+                .ToList();
 
             return new DashboardDto
             {
-                PendingCount = pending,
-                InProgressCount = inProgress,
-                CompletedCount = completed,
-                TotalCount = pending + inProgress + completed
+                TotalTasks = totalTasks,
+                PendingTasks = pendingTasks,
+                InProgressTasks = inProgressTasks,
+                CompletedTasks = completedTasks,
+                HighPriorityTasks = highPriorityTasks,
+                MediumPriorityTasks = mediumPriorityTasks,
+                LowPriorityTasks = lowPriorityTasks,
+                RecentTasks = recentTasks
             };
         }
 
         public async Task<byte[]> ExportTasksAsync(int userId, string userRole)
         {
             var tasks = await GetTasksAsync(userId, userRole);
-            var jsonBytes = System.Text.Json.JsonSerializer.SerializeToUtf8Bytes(tasks, new System.Text.Json.JsonSerializerOptions
+            var json = System.Text.Json.JsonSerializer.Serialize(tasks, new System.Text.Json.JsonSerializerOptions
             {
                 WriteIndented = true
             });
-            _logger.LogInformation("User ID {UserId} exported {Count} tasks.", userId, tasks.Count());
-            return jsonBytes;
+
+            return System.Text.Encoding.UTF8.GetBytes(json);
         }
 
-        public async Task<int> ImportTasksAsync(IEnumerable<TaskCreateDto> dtos, int userId)
+        public async Task<int> ImportTasksAsync(List<TaskCreateDto> dtos, int userId)
         {
             if (dtos == null || !dtos.Any())
             {
                 return 0;
             }
+
+            var validPriorities = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "High", "Medium", "Low" };
+            var validStatuses = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "Pending", "InProgress", "Completed" };
 
             var validTasks = dtos
                 .Where(dto => !string.IsNullOrWhiteSpace(dto.Title))
@@ -284,10 +308,15 @@ namespace TaskManager.API.Services
                     Title = dto.Title,
                     Description = dto.Description ?? string.Empty,
                     DueDate = dto.DueDate,
-                    Priority = string.IsNullOrWhiteSpace(dto.Priority) ? "Medium" : dto.Priority,
-                    Status = string.IsNullOrWhiteSpace(dto.Status) ? "Pending" : dto.Status,
+                    Priority = (!string.IsNullOrWhiteSpace(dto.Priority) && validPriorities.Contains(dto.Priority)) ? dto.Priority : "Medium",
+                    Status = (!string.IsNullOrWhiteSpace(dto.Status) && validStatuses.Contains(dto.Status)) ? dto.Status : "Pending",
                     Category = dto.Category ?? string.Empty,
-                    AssignedUserId = userId
+                    AssignedUserId = userId,
+                    SubTasks = (dto.SubTasks ?? Enumerable.Empty<SubTaskDto>()).Select(st => new SubTask
+                    {
+                        Title = st.Title,
+                        IsCompleted = st.IsCompleted
+                    }).ToList()
                 })
                 .ToList();
 

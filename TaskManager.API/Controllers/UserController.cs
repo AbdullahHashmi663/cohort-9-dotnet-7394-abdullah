@@ -28,6 +28,7 @@ namespace TaskManager.API.Controllers
 
         // GET: api/user/all
         [HttpGet("all")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> GetAllUsers()
         {
             var users = await _userService.GetAllUsersAsync();

@@ -35,7 +35,10 @@ export default function Signup() {
       setSuccess('Account created successfully! Redirecting to login...');
       setTimeout(() => navigate('/login'), 2000);
     } catch (err) {
-      setError(err.response?.data?.message || err.response?.data || 'Registration failed. Please try again.');
+      const msg = typeof err.response?.data === 'string'
+        ? err.response.data
+        : (err.response?.data?.message || err.message || 'Registration failed. Please try again.');
+      setError(msg);
     } finally {
       setLoading(false);
     }
@@ -67,7 +70,7 @@ export default function Signup() {
               placeholder=" "
               required
             />
-            <span><User size={12} /> Full Name</span>
+            <label htmlFor="name"><span><User size={12} /> Full Name</span></label>
           </div>
 
           <div className="inputBox">
@@ -79,7 +82,7 @@ export default function Signup() {
               placeholder=" "
               required
             />
-            <span><Mail size={12} /> Email</span>
+            <label htmlFor="email"><span><Mail size={12} /> Email</span></label>
           </div>
 
           <div className="inputBox">
@@ -91,7 +94,7 @@ export default function Signup() {
               placeholder=" "
               required
             />
-            <span><Lock size={12} /> Password</span>
+            <label htmlFor="password"><span><Lock size={12} /> Password</span></label>
           </div>
 
           <div className="inputBox">
@@ -103,7 +106,7 @@ export default function Signup() {
               placeholder=" "
               required
             />
-            <span><Lock size={12} /> Confirm</span>
+            <label htmlFor="confirmPassword"><span><Lock size={12} /> Confirm</span></label>
           </div>
 
           <button type="submit" className="btn btn-primary btn-full" disabled={loading} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', marginTop: '10px' }}>
