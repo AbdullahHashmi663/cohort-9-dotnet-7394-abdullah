@@ -291,9 +291,15 @@ namespace TaskManager.API.Services
             return System.Text.Encoding.UTF8.GetBytes(json);
         }
 
-        public async Task<int> ImportTasksAsync(List<TaskCreateDto> dtos, int userId)
+        public async Task<int> ImportTasksAsync(IEnumerable<TaskCreateDto> dtos, int userId)
         {
-            if (dtos == null || !dtos.Any())
+            if (dtos == null)
+            {
+                return 0;
+            }
+
+            var dtoList = dtos as IReadOnlyCollection<TaskCreateDto> ?? dtos.ToList();
+            if (dtoList.Count == 0)
             {
                 return 0;
             }
@@ -301,7 +307,7 @@ namespace TaskManager.API.Services
             var validPriorities = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "High", "Medium", "Low" };
             var validStatuses = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "Pending", "InProgress", "Completed" };
 
-            var validTasks = dtos
+            var validTasks = dtoList
                 .Where(dto => !string.IsNullOrWhiteSpace(dto.Title))
                 .Select(dto => new TaskItem
                 {
